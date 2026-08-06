@@ -1,0 +1,17 @@
+## .NET ##
+bin/
+obj/
+*.user
+.vs/
+*.suo
+
+## Node / React ##
+node_modules/
+frontend/build/
+frontend/dist/
+.env
+.env.local
+
+## OS / Editor ##
+.DS_Store
+Thumbs.db
