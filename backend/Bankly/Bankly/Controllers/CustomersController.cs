@@ -1,4 +1,5 @@
 ﻿using Bankly.Data;
+using Bankly.DTOs;
 using Bankly.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,51 +19,89 @@ namespace Bankly.Controllers
 
         // GET: api/customers
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetAll()
+        public async Task<ActionResult<IEnumerable<CustomerResponseDto>>> GetAll()
         {
-            return await _context.Customers.ToListAsync();
+            var customers = await _context.Customers
+                .Select(customer => new CustomerResponseDto
+                {
+                    Id = customer.Id,
+                    FirstName = customer.FirstName,
+                    LastName = customer.LastName,
+                    Email = customer.Email,
+                    PhoneNumber = customer.PhoneNumber
+                })
+                .ToListAsync();
+
+            return Ok(customers);
         }
 
         // GET: api/customers/1
         [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetById(int id)
+        public async Task<ActionResult<CustomerResponseDto>> GetById(int id)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _context.Customers
+                .Where(customer => customer.Id == id)
+                .Select(customer => new CustomerResponseDto
+                {
+                    Id = customer.Id,
+                    FirstName = customer.FirstName,
+                    LastName = customer.LastName,
+                    Email = customer.Email,
+                    PhoneNumber = customer.PhoneNumber
+                })
+                .FirstOrDefaultAsync();
 
             if (customer == null)
                 return NotFound();
 
-            return customer;
+            return Ok(customer);
         }
 
         // POST: api/customers
         [HttpPost]
-        public async Task<ActionResult<Customer>> Create(Customer customer)
+        public async Task<ActionResult<CustomerResponseDto>> Create(CreateCustomerDto dto)
         {
+            var customer = new Customer
+            {
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber
+            };
+
             _context.Customers.Add(customer);
+
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById),
+            var response = new CustomerResponseDto
+            {
+                Id = customer.Id,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                Email = customer.Email,
+                PhoneNumber = customer.PhoneNumber
+            };
+
+            return CreatedAtAction(
+                nameof(GetById),
                 new { id = customer.Id },
-                customer);
+                response
+            );
         }
 
         // PUT: api/customers/1
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Customer updatedCustomer)
+        public async Task<IActionResult> Update(int id, UpdateCustomerDto dto)
         {
-            if (id != updatedCustomer.Id)
-                return BadRequest();
-
             var customer = await _context.Customers.FindAsync(id);
 
             if (customer == null)
                 return NotFound();
 
-            customer.FirstName = updatedCustomer.FirstName;
-            customer.LastName = updatedCustomer.LastName;
-            customer.Email = updatedCustomer.Email;
-            customer.PhoneNumber = updatedCustomer.PhoneNumber;
+            customer.FirstName = dto.FirstName;
+            customer.LastName = dto.LastName;
+            customer.Email = dto.Email;
+            customer.PhoneNumber = dto.PhoneNumber;
 
             await _context.SaveChangesAsync();
 
@@ -79,6 +118,7 @@ namespace Bankly.Controllers
                 return NotFound();
 
             _context.Customers.Remove(customer);
+
             await _context.SaveChangesAsync();
 
             return NoContent();
