@@ -1,11 +1,13 @@
 ﻿using Bankly.Data;
 using Bankly.DTOs;
 using Bankly.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bankly.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AccountsController : ControllerBase
@@ -59,7 +61,8 @@ namespace Bankly.Controllers
 
         // POST: api/accounts
         [HttpPost]
-        public async Task<ActionResult<AccountResponseDto>> Create(CreateAccountDto dto)
+        public async Task<ActionResult<AccountResponseDto>> Create(
+            CreateAccountDto dto)
         {
             var customer = await _context.Customers.FindAsync(dto.CustomerId);
 
@@ -109,7 +112,9 @@ namespace Bankly.Controllers
                 return BadRequest("Account is inactive.");
 
             if (request.Amount <= 0)
-                return BadRequest("Deposit amount must be greater than zero.");
+                return BadRequest(
+                    "Deposit amount must be greater than zero."
+                );
 
             account.Balance += request.Amount;
 
@@ -152,7 +157,9 @@ namespace Bankly.Controllers
                 return BadRequest("Account is inactive.");
 
             if (request.Amount <= 0)
-                return BadRequest("Withdrawal amount must be greater than zero.");
+                return BadRequest(
+                    "Withdrawal amount must be greater than zero."
+                );
 
             if (request.Amount > account.Balance)
                 return BadRequest("Insufficient balance.");
@@ -189,50 +196,40 @@ namespace Bankly.Controllers
             int id,
             TransferRequest request)
         {
-            // Buscar conta de origem
             var sourceAccount = await _context.Accounts.FindAsync(id);
 
             if (sourceAccount == null)
                 return NotFound("Source account not found.");
 
-            // Buscar conta de destino
             var destinationAccount = await _context.Accounts
                 .FindAsync(request.DestinationAccountId);
 
             if (destinationAccount == null)
                 return NotFound("Destination account not found.");
 
-            // Verificar se as contas são diferentes
             if (sourceAccount.Id == destinationAccount.Id)
                 return BadRequest(
                     "Source and destination accounts must be different."
                 );
 
-            // Verificar se a conta de origem está ativa
             if (!sourceAccount.IsActive)
                 return BadRequest("Source account is inactive.");
 
-            // Verificar se a conta de destino está ativa
             if (!destinationAccount.IsActive)
                 return BadRequest("Destination account is inactive.");
 
-            // Verificar valor
             if (request.Amount <= 0)
                 return BadRequest(
                     "Transfer amount must be greater than zero."
                 );
 
-            // Verificar saldo
             if (request.Amount > sourceAccount.Balance)
                 return BadRequest("Insufficient balance.");
 
-            // Retirar dinheiro da conta de origem
             sourceAccount.Balance -= request.Amount;
 
-            // Adicionar dinheiro na conta de destino
             destinationAccount.Balance += request.Amount;
 
-            // Registrar saída da conta de origem
             var sourceTransaction = new Transaction
             {
                 Amount = request.Amount,
@@ -241,7 +238,6 @@ namespace Bankly.Controllers
                 AccountId = sourceAccount.Id
             };
 
-            // Registrar entrada na conta de destino
             var destinationTransaction = new Transaction
             {
                 Amount = request.Amount,
