@@ -1,6 +1,7 @@
 ﻿using Bankly.Data;
 using Bankly.DTOs;
 using Bankly.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ namespace Bankly.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CustomersController : ControllerBase
     {
         private readonly BankDbContext _context;
@@ -21,7 +23,13 @@ namespace Bankly.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CustomerResponseDto>>> GetAll()
         {
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
             var customers = await _context.Customers
+                .Where(customer => customer.Id == customerId)
                 .Select(customer => new CustomerResponseDto
                 {
                     Id = customer.Id,
@@ -39,6 +47,14 @@ namespace Bankly.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<CustomerResponseDto>> GetById(int id)
         {
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            if (id != customerId)
+                return Forbid();
+
             var customer = await _context.Customers
                 .Where(customer => customer.Id == id)
                 .Select(customer => new CustomerResponseDto
@@ -58,8 +74,11 @@ namespace Bankly.Controllers
         }
 
         // POST: api/customers
+        // Necessário antes do registro do usuário
+        [AllowAnonymous]
         [HttpPost]
-        public async Task<ActionResult<CustomerResponseDto>> Create(CreateCustomerDto dto)
+        public async Task<ActionResult<CustomerResponseDto>> Create(
+            CreateCustomerDto dto)
         {
             var customer = new Customer
             {
@@ -91,8 +110,18 @@ namespace Bankly.Controllers
 
         // PUT: api/customers/1
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateCustomerDto dto)
+        public async Task<IActionResult> Update(
+            int id,
+            UpdateCustomerDto dto)
         {
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            if (id != customerId)
+                return Forbid();
+
             var customer = await _context.Customers.FindAsync(id);
 
             if (customer == null)
@@ -112,6 +141,14 @@ namespace Bankly.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            if (id != customerId)
+                return Forbid();
+
             var customer = await _context.Customers.FindAsync(id);
 
             if (customer == null)

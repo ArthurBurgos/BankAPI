@@ -23,7 +23,13 @@ namespace Bankly.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AccountResponseDto>>> GetAll()
         {
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
             var accounts = await _context.Accounts
+                .Where(account => account.CustomerId == customerId)
                 .Select(account => new AccountResponseDto
                 {
                     Id = account.Id,
@@ -41,8 +47,15 @@ namespace Bankly.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<AccountResponseDto>> GetById(int id)
         {
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
             var account = await _context.Accounts
-                .Where(account => account.Id == id)
+                .Where(account =>
+                    account.Id == id &&
+                    account.CustomerId == customerId)
                 .Select(account => new AccountResponseDto
                 {
                     Id = account.Id,
@@ -64,7 +77,12 @@ namespace Bankly.Controllers
         public async Task<ActionResult<AccountResponseDto>> Create(
             CreateAccountDto dto)
         {
-            var customer = await _context.Customers.FindAsync(dto.CustomerId);
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            var customer = await _context.Customers.FindAsync(customerId);
 
             if (customer == null)
                 return BadRequest("Customer not found.");
@@ -72,7 +90,7 @@ namespace Bankly.Controllers
             var account = new Account
             {
                 AccountNumber = dto.AccountNumber,
-                CustomerId = dto.CustomerId,
+                CustomerId = customerId,
                 Balance = 0,
                 IsActive = true
             };
@@ -103,7 +121,15 @@ namespace Bankly.Controllers
             int id,
             DepositRequest request)
         {
-            var account = await _context.Accounts.FindAsync(id);
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(account =>
+                    account.Id == id &&
+                    account.CustomerId == customerId);
 
             if (account == null)
                 return NotFound("Account not found.");
@@ -148,7 +174,15 @@ namespace Bankly.Controllers
             int id,
             WithdrawRequest request)
         {
-            var account = await _context.Accounts.FindAsync(id);
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(account =>
+                    account.Id == id &&
+                    account.CustomerId == customerId);
 
             if (account == null)
                 return NotFound("Account not found.");
@@ -196,11 +230,21 @@ namespace Bankly.Controllers
             int id,
             TransferRequest request)
         {
-            var sourceAccount = await _context.Accounts.FindAsync(id);
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            // Conta de origem precisa pertencer ao usuário autenticado
+            var sourceAccount = await _context.Accounts
+                .FirstOrDefaultAsync(account =>
+                    account.Id == id &&
+                    account.CustomerId == customerId);
 
             if (sourceAccount == null)
                 return NotFound("Source account not found.");
 
+            // Conta de destino pode pertencer a outro cliente
             var destinationAccount = await _context.Accounts
                 .FindAsync(request.DestinationAccountId);
 
@@ -266,7 +310,15 @@ namespace Bankly.Controllers
             int id,
             UpdateAccountDto dto)
         {
-            var account = await _context.Accounts.FindAsync(id);
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(account =>
+                    account.Id == id &&
+                    account.CustomerId == customerId);
 
             if (account == null)
                 return NotFound();
@@ -282,7 +334,15 @@ namespace Bankly.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var account = await _context.Accounts.FindAsync(id);
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+
+            if (!int.TryParse(customerIdClaim, out int customerId))
+                return Unauthorized("Invalid customer identity.");
+
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(account =>
+                    account.Id == id &&
+                    account.CustomerId == customerId);
 
             if (account == null)
                 return NotFound();
