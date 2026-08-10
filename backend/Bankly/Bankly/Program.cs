@@ -1,3 +1,4 @@
+using Bankly.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Bankly.Controllers;
 using Bankly.Data;
@@ -22,6 +23,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseAuthorization();
 
