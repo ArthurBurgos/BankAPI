@@ -13,5 +13,7 @@
         public int CustomerId { get; set; }
 
         public Customer? Customer { get; set; }
+
+        public List<Transaction> Transactions { get; set; } = new();
     }
 }

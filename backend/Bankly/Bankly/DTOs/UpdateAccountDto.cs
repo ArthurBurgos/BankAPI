@@ -1,4 +1,6 @@
-﻿namespace Bankly.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Bankly.DTOs
 {
     public class UpdateAccountDto
     {

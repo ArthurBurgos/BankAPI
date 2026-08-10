@@ -2,7 +2,7 @@
 
 namespace Bankly.DTOs
 {
-    public class DepositRequest
+    public class WithdrawRequest
     {
         [Range(0.01, 1000000)]
         public decimal Amount { get; set; }

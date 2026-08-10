@@ -1,6 +1,6 @@
-﻿namespace Bankly.Models
+﻿namespace Bankly.DTOs
 {
-    public class Transaction
+    public class TransactionResponseDto
     {
         public int Id { get; set; }
 
@@ -11,7 +11,5 @@
         public string Type { get; set; } = string.Empty;
 
         public int AccountId { get; set; }
-
-        public Account? Account { get; set; }
     }
 }
