@@ -235,7 +235,7 @@ namespace Bankly.Controllers
             if (!int.TryParse(customerIdClaim, out int customerId))
                 return Unauthorized("Invalid customer identity.");
 
-            // Conta de origem precisa pertencer ao usuário autenticado
+            // The source account must belong to the authenticated user
             var sourceAccount = await _context.Accounts
                 .FirstOrDefaultAsync(account =>
                     account.Id == id &&
@@ -244,7 +244,7 @@ namespace Bankly.Controllers
             if (sourceAccount == null)
                 return NotFound("Source account not found.");
 
-            // Conta de destino pode pertencer a outro cliente
+            // The destination account may belong to another customer
             var destinationAccount = await _context.Accounts
                 .FindAsync(request.DestinationAccountId);
 

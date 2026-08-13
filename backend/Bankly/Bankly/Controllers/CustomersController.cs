@@ -74,7 +74,7 @@ namespace Bankly.Controllers
         }
 
         // POST: api/customers
-        // Necessário antes do registro do usuário
+        // Required before user registration
         [AllowAnonymous]
         [HttpPost]
         public async Task<ActionResult<CustomerResponseDto>> Create(
