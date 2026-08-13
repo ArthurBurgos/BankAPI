@@ -1,0 +1,91 @@
+:root {
+    font-family:
+        "Inter",
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    color: #17201c;
+
+    background: #f5f7f6;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --background: #f5f7f6;
+    --surface: #ffffff;
+    --border: #dfe5e1;
+    --border-hover: #c5cec9;
+
+    --text-primary: #17201c;
+    --text-secondary: #65736c;
+    --text-muted: #98a39e;
+
+    --primary: #10b981;
+    --primary-hover: #059669;
+}
+
+
+[data-theme="dark"] {
+    color: #f4f7f5;
+
+    background: #151922;
+
+    --background: #151922;
+    --surface: #1e2430;
+    --border: #343d4b;
+    --border-hover: #465264;
+
+    --text-primary: #f4f7f5;
+    --text-secondary: #aab4c2;
+    --text-muted: #758092;
+
+    --primary: #10b981;
+    --primary-hover: #059669;
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+
+html,
+body,
+#root {
+    margin: 0;
+
+    min-width: 320px;
+    min-height: 100vh;
+}
+
+
+body {
+    margin: 0;
+
+    font-family:
+        "Inter",
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+
+    background: var(--background);
+
+    color: var(--text-primary);
+
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+}
+
+
+button,
+input {
+    font: inherit;
+}

@@ -1,0 +1,554 @@
+/* ==================================================
+   BANKLY LOGIN
+================================================== */
+
+.login-page {
+    --background: #f5f7f9;
+    --surface: #ffffff;
+    --border: #d9e0e5;
+
+    --text-primary: #111827;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+
+    --primary: #10b981;
+    --primary-hover: #059669;
+
+    --switch-background: #d5dce2;
+    --switch-border: #c5ced6;
+    --switch-thumb: #ffffff;
+
+    position: relative;
+
+    min-height: 100vh;
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+
+    padding: 70px 20px 40px;
+
+    background: var(--background);
+
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+}
+
+
+/* ==================================================
+   DARK MODE
+================================================== */
+
+.login-page.dark {
+    --background: #181b1f;
+    --surface: #24292f;
+    --border: #3b434c;
+
+    --text-primary: #f5f7fa;
+    --text-secondary: #aab4c0;
+    --text-muted: #7f8b98;
+
+    --primary: #39d98a;
+    --primary-hover: #2fc77c;
+
+    --switch-background: #303840;
+    --switch-border: #4b5661;
+    --switch-thumb: #39d98a;
+}
+
+
+/* ==================================================
+   THEME TOGGLE
+================================================== */
+
+.theme-toggle {
+    position: absolute;
+
+    top: 24px;
+    right: 28px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    z-index: 20;
+}
+
+
+.theme-label {
+    color: var(--text-primary);
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    user-select: none;
+}
+
+
+/* ==================================================
+   SWITCH
+================================================== */
+
+.theme-switch {
+    position: relative;
+
+    width: 48px;
+    height: 26px;
+
+    padding: 0;
+
+    border: 1px solid var(--switch-border);
+    border-radius: 999px;
+
+    background: var(--switch-background);
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background-color 0.25s ease,
+        border-color 0.25s ease;
+}
+
+
+.theme-switch:hover {
+    border-color: var(--primary);
+}
+
+
+/* Bolinha */
+
+.theme-switch-thumb {
+    position: absolute;
+
+    top: 3px;
+    left: 3px;
+
+    width: 18px;
+    height: 18px;
+
+    border-radius: 50%;
+
+    background: var(--switch-thumb);
+
+    box-shadow:
+        0 2px 5px rgba(0, 0, 0, 0.25);
+
+    transition:
+        transform 0.25s ease,
+        background-color 0.25s ease;
+}
+
+
+/* Light */
+
+.theme-switch.light .theme-switch-thumb {
+    transform: translateX(0);
+}
+
+
+/* Dark */
+
+.theme-switch.dark {
+    background: #26332d;
+    border-color: #456254;
+}
+
+
+.theme-switch.dark .theme-switch-thumb {
+    transform: translateX(22px);
+
+    background: var(--primary);
+}
+
+
+/* ==================================================
+   LOGIN CARD
+================================================== */
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+
+    margin: 0 auto;
+
+    box-sizing: border-box;
+}
+
+
+/* ==================================================
+   BRAND
+================================================== */
+
+.login-brand {
+    width: 100%;
+
+    text-align: center;
+
+    margin-bottom: 30px;
+}
+
+
+/* Bankly */
+
+.login-logo {
+    display: inline-block;
+
+    margin-bottom: 18px;
+
+    color: var(--primary);
+
+    font-family:
+        "Trebuchet MS",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 42px;
+    font-weight: 800;
+
+    letter-spacing: -2px;
+
+    line-height: 1;
+
+    text-shadow:
+        0 5px 18px rgba(16, 185, 129, 0.18);
+}
+
+
+/* ==================================================
+   TITLE
+================================================== */
+
+.login-brand h1 {
+    margin: 0 0 7px;
+
+    color: var(--text-primary);
+
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 30px;
+    font-weight: 700;
+
+    letter-spacing: -0.7px;
+
+    line-height: 1.2;
+}
+
+
+.login-brand p {
+    margin: 0;
+
+    color: var(--text-secondary);
+
+    font-size: 14px;
+    font-weight: 400;
+
+    line-height: 1.5;
+}
+
+
+/* ==================================================
+   FORM
+================================================== */
+
+.login-form {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 18px;
+}
+
+
+/* ==================================================
+   FORM GROUP
+================================================== */
+
+.form-group {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+
+.form-group label {
+    color: var(--text-primary);
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* ==================================================
+   INPUT
+================================================== */
+
+.form-group input {
+    width: 100%;
+    height: 46px;
+
+    box-sizing: border-box;
+
+    padding: 0 14px;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    background: var(--surface);
+    color: var(--text-primary);
+
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.3s ease,
+        color 0.3s ease;
+}
+
+
+.form-group input::placeholder {
+    color: var(--text-muted);
+}
+
+
+.form-group input:focus {
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(16, 185, 129, 0.10);
+}
+
+
+/* ==================================================
+   PASSWORD
+================================================== */
+
+.password-wrapper {
+    position: relative;
+
+    width: 100%;
+}
+
+
+.password-wrapper input {
+    padding-right: 60px;
+}
+
+
+/* Show / Hide */
+
+.password-toggle {
+    position: absolute;
+
+    top: 50%;
+    right: 12px;
+
+    transform: translateY(-50%);
+
+    padding: 4px;
+
+    border: none;
+
+    background: transparent;
+
+    color: var(--primary);
+
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+.password-toggle:hover {
+    color: var(--primary-hover);
+}
+
+
+.password-toggle:focus {
+    outline: none;
+}
+
+
+/* ==================================================
+   LOGIN BUTTON
+================================================== */
+
+.login-button {
+    width: 100%;
+    height: 46px;
+
+    margin-top: 2px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: var(--primary);
+    color: #ffffff;
+
+    font-family:
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.login-button:hover:not(:disabled) {
+    background: var(--primary-hover);
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 7px 18px rgba(16, 185, 129, 0.18);
+}
+
+
+.login-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+
+.login-button:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+/* ==================================================
+   FOOTER
+================================================== */
+
+.login-footer {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 24px;
+
+    font-size: 13px;
+}
+
+
+.login-footer span {
+    color: var(--text-secondary);
+}
+
+
+.login-footer a {
+    color: var(--primary);
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition: color 0.2s ease;
+}
+
+
+.login-footer a:hover {
+    color: var(--primary-hover);
+}
+
+
+/* ==================================================
+   RESPONSIVE
+================================================== */
+
+@media (max-width: 600px) {
+
+    .login-page {
+        padding: 70px 18px 30px;
+    }
+
+    .theme-toggle {
+        top: 18px;
+        right: 18px;
+    }
+
+    .login-card {
+        max-width: 360px;
+    }
+
+    .login-logo {
+        font-size: 38px;
+    }
+
+    .login-brand h1 {
+        font-size: 27px;
+    }
+}
+
+
+@media (max-width: 400px) {
+
+    .login-page {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .theme-toggle {
+        right: 14px;
+    }
+
+    .login-card {
+        max-width: 100%;
+    }
+
+    .login-brand h1 {
+        font-size: 25px;
+    }
+
+    .login-footer {
+        flex-direction: column;
+
+        gap: 3px;
+    }
+}
