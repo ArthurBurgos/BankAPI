@@ -1,82 +1,94 @@
 :root {
     font-family:
-        "Inter",
         "Segoe UI",
-        Roboto,
-        Helvetica,
         Arial,
         sans-serif;
 
-    color: #17201c;
-
-    background: #f5f7f6;
+    color: #111827;
+    background: #f5f7f9;
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
 
-    --background: #f5f7f6;
+:root[data-theme="light"] {
+    --background: #f5f7f9;
     --surface: #ffffff;
-    --border: #dfe5e1;
-    --border-hover: #c5cec9;
+    --surface-secondary: #f8fafc;
 
-    --text-primary: #17201c;
-    --text-secondary: #65736c;
-    --text-muted: #98a39e;
+    --border: #d9e0e5;
 
-    --primary: #10b981;
-    --primary-hover: #059669;
-}
-
-
-[data-theme="dark"] {
-    color: #f4f7f5;
-
-    background: #151922;
-
-    --background: #151922;
-    --surface: #1e2430;
-    --border: #343d4b;
-    --border-hover: #465264;
-
-    --text-primary: #f4f7f5;
-    --text-secondary: #aab4c2;
-    --text-muted: #758092;
+    --text-primary: #111827;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
 
     --primary: #10b981;
     --primary-hover: #059669;
+
+    --sidebar-background: #111827;
+    --sidebar-surface: #1f2937;
+    --sidebar-text: #9ca3af;
+    --sidebar-text-active: #ffffff;
+
+    --success-background: #ecfdf5;
+    --success-text: #059669;
+
+    --danger-background: #fef2f2;
+    --danger-text: #dc2626;
+
+    --info-background: #eff6ff;
+    --info-text: #2563eb;
+
+    --shadow: rgba(0, 0, 0, 0.04);
 }
 
+:root[data-theme="dark"] {
+    --background: #181b1f;
+    --surface: #24292f;
+    --surface-secondary: #20252a;
+
+    --border: #3b434c;
+
+    --text-primary: #f5f7fa;
+    --text-secondary: #aab4c0;
+    --text-muted: #7f8b98;
+
+    --primary: #39d98a;
+    --primary-hover: #2fc77c;
+
+    --sidebar-background: #111416;
+    --sidebar-surface: #20251f;
+    --sidebar-text: #8f9b96;
+    --sidebar-text-active: #ffffff;
+
+    --success-background: #17352a;
+    --success-text: #39d98a;
+
+    --danger-background: #3a2225;
+    --danger-text: #f87171;
+
+    --info-background: #202f2a;
+    --info-text: #39d98a;
+
+    --shadow: rgba(0, 0, 0, 0.20);
+}
 
 * {
     box-sizing: border-box;
 }
 
-
 html,
 body,
 #root {
+    min-height: 100%;
     margin: 0;
-
-    min-width: 320px;
-    min-height: 100vh;
 }
 
-
 body {
-    margin: 0;
-
-    font-family:
-        "Inter",
-        "Segoe UI",
-        Roboto,
-        Helvetica,
-        Arial,
-        sans-serif;
-
+    min-width: 320px;
     background: var(--background);
-
     color: var(--text-primary);
 
     transition:
@@ -84,8 +96,9 @@ body {
         color 0.3s ease;
 }
 
-
 button,
-input {
+input,
+textarea,
+select {
     font: inherit;
 }

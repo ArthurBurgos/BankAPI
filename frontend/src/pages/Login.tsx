@@ -1,62 +1,114 @@
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useState, type SubmitEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Login.css";
-import { useTheme } from "../contexts/ThemeContext";
+
+interface LoginResponse {
+    token: string;
+    userId: number;
+    customerId: number;
+    username: string;
+}
 
 function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
-    const { theme, toggleTheme } = useTheme();
+    const navigate = useNavigate();
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (
+        event: SubmitEvent<HTMLFormElement>
+    ) => {
         event.preventDefault();
 
+        setErrorMessage("");
+
         if (!username.trim() || !password.trim()) {
+            setErrorMessage(
+                "Please enter your username and password."
+            );
             return;
         }
 
         setIsLoading(true);
 
-        // A integração com a API de login será adicionada aqui.
+        try {
+            const response = await fetch(
+                "http://localhost:5000/api/Auth/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        username: username.trim(),
+                        password: password,
+                    }),
+                }
+            );
 
-        setTimeout(() => {
+            if (!response.ok) {
+                if (response.status === 401) {
+                    setErrorMessage(
+                        "Invalid username or password."
+                    );
+                } else {
+                    const errorText =
+                        await response.text();
+
+                    setErrorMessage(
+                        errorText ||
+                            "Unable to sign in."
+                    );
+                }
+
+                return;
+            }
+
+            const data: LoginResponse =
+                await response.json();
+
+            localStorage.setItem(
+                "token",
+                data.token
+            );
+
+            localStorage.setItem(
+                "userId",
+                data.userId.toString()
+            );
+
+            localStorage.setItem(
+                "customerId",
+                data.customerId.toString()
+            );
+
+            localStorage.setItem(
+                "username",
+                data.username
+            );
+
+            navigate("/dashboard");
+        } catch (error) {
+            console.error(
+                "Login error:",
+                error
+            );
+
+            setErrorMessage(
+                "Unable to connect to the server."
+            );
+        } finally {
             setIsLoading(false);
-        }, 800);
+        }
     };
 
     return (
-        <main className={`login-page ${theme}`}>
-            {/* Theme Toggle */}
-            <div className="theme-toggle">
-                <span className="theme-label">
-                    Light
-                </span>
-
-                <button
-                    type="button"
-                    className={`theme-switch ${
-                        theme === "dark" ? "dark" : "light"
-                    }`}
-                    onClick={toggleTheme}
-                    aria-label="Toggle theme"
-                >
-                    <span className="theme-switch-thumb"></span>
-                </button>
-
-                <span className="theme-label">
-                    Dark
-                </span>
-            </div>
-
-            {/* Login */}
+        <main className="login-page">
             <section className="login-card">
-
-                {/* Brand */}
                 <div className="login-brand">
-
                     <div className="login-logo">
                         Bankly
                     </div>
@@ -70,15 +122,11 @@ function Login() {
                     </p>
                 </div>
 
-                {/* Form */}
                 <form
                     className="login-form"
                     onSubmit={handleSubmit}
                 >
-
-                    {/* Username */}
                     <div className="form-group">
-
                         <label htmlFor="username">
                             Username
                         </label>
@@ -88,23 +136,21 @@ function Login() {
                             type="text"
                             value={username}
                             onChange={(event) =>
-                                setUsername(event.target.value)
+                                setUsername(
+                                    event.target.value
+                                )
                             }
                             placeholder="Enter your username"
                             autoComplete="username"
                         />
-
                     </div>
 
-                    {/* Password */}
                     <div className="form-group">
-
                         <label htmlFor="password">
                             Password
                         </label>
 
                         <div className="password-wrapper">
-
                             <input
                                 id="password"
                                 type={
@@ -114,7 +160,9 @@ function Login() {
                                 }
                                 value={password}
                                 onChange={(event) =>
-                                    setPassword(event.target.value)
+                                    setPassword(
+                                        event.target.value
+                                    )
                                 }
                                 placeholder="Enter your password"
                                 autoComplete="current-password"
@@ -133,11 +181,15 @@ function Login() {
                                     ? "Hide"
                                     : "Show"}
                             </button>
-
                         </div>
                     </div>
 
-                    {/* Submit */}
+                    {errorMessage && (
+                        <div className="login-error">
+                            {errorMessage}
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         className="login-button"
@@ -151,12 +203,9 @@ function Login() {
                             ? "Signing in..."
                             : "Sign in →"}
                     </button>
-
                 </form>
 
-                {/* Footer */}
                 <div className="login-footer">
-
                     <span>
                         Don't have an account?
                     </span>
@@ -164,9 +213,7 @@ function Login() {
                     <Link to="/register">
                         Create an account
                     </Link>
-
                 </div>
-
             </section>
         </main>
     );

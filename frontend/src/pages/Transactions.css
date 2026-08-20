@@ -1,0 +1,176 @@
+.transactions-page {
+    min-height: 100vh;
+    display: flex;
+
+    background-color: #181b1f;
+    color: #f5f7fa;
+}
+
+.transactions-main {
+    flex: 1;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+.transactions-page-header {
+    margin-bottom: 30px;
+}
+
+.transactions-page-header h2 {
+    margin: 0;
+    color: #f5f7fa;
+    font-size: 24px;
+}
+
+.transactions-page-header p {
+    margin-top: 6px;
+    color: #aab4c0;
+}
+
+.transactions-container {
+    overflow: hidden;
+    border: 1px solid #3b434c;
+    border-radius: 12px;
+    background-color: #24292f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.transactions-toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #3b434c;
+}
+
+.transaction-search {
+    flex: 1;
+    max-width: 400px;
+}
+
+.transaction-search input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #3b434c;
+    border-radius: 8px;
+    box-sizing: border-box;
+    outline: none;
+    background-color: #1e2328;
+    color: #f5f7fa;
+}
+
+.transaction-search input::placeholder {
+    color: #7f8b98;
+}
+
+.transaction-search input:focus {
+    border-color: #39d98a;
+}
+
+.transactions-toolbar select {
+    padding: 11px 14px;
+    border: 1px solid #3b434c;
+    border-radius: 8px;
+    background-color: #1e2328;
+    color: #f5f7fa;
+    cursor: pointer;
+}
+
+.transactions-table-wrapper {
+    overflow-x: auto;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table th {
+    padding: 15px 24px;
+    background-color: #1e2328;
+    color: #aab4c0;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+}
+
+.transactions-table td {
+    padding: 18px 24px;
+    border-top: 1px solid #3b434c;
+    color: #f5f7fa;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.transaction-table-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.transaction-table-icon {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.transaction-table-icon.deposit,
+.transaction-table-icon.transfer-in {
+    background-color: #19352a;
+    color: #39d98a;
+}
+
+.transaction-table-icon.withdrawal,
+.transaction-table-icon.transfer-out {
+    background-color: #3a2426;
+    color: #ef6b6b;
+}
+
+.transaction-type {
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.transaction-type.deposit,
+.transaction-type.transfer-in {
+    background-color: #19352a;
+    color: #39d98a;
+}
+
+.transaction-type.withdrawal,
+.transaction-type.transfer-out {
+    background-color: #3a2426;
+    color: #ef6b6b;
+}
+
+.amount-positive {
+    color: #39d98a;
+}
+
+.amount-negative {
+    color: #ef6b6b;
+}
+
+@media (max-width: 700px) {
+    .transactions-main {
+        padding: 24px;
+    }
+
+    .transactions-toolbar {
+        flex-direction: column;
+    }
+
+    .transaction-search {
+        max-width: none;
+    }
+
+    .transactions-toolbar select {
+        width: 100%;
+    }
+}

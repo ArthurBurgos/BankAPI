@@ -3,20 +3,16 @@
 ================================================== */
 
 .login-page {
-    --background: #f5f7f9;
-    --surface: #ffffff;
-    --border: #d9e0e5;
+    --background: #181b1f;
+    --surface: #24292f;
+    --border: #3b434c;
 
-    --text-primary: #111827;
-    --text-secondary: #64748b;
-    --text-muted: #94a3b8;
+    --text-primary: #f5f7fa;
+    --text-secondary: #aab4c0;
+    --text-muted: #7f8b98;
 
-    --primary: #10b981;
-    --primary-hover: #059669;
-
-    --switch-background: #d5dce2;
-    --switch-border: #c5ced6;
-    --switch-thumb: #ffffff;
+    --primary: #39d98a;
+    --primary-hover: #2fc77c;
 
     position: relative;
 
@@ -29,7 +25,7 @@
 
     box-sizing: border-box;
 
-    padding: 70px 20px 40px;
+    padding: 40px 20px;
 
     background: var(--background);
 
@@ -37,141 +33,6 @@
         "Segoe UI",
         Arial,
         sans-serif;
-
-    transition:
-        background-color 0.3s ease,
-        color 0.3s ease;
-}
-
-
-/* ==================================================
-   DARK MODE
-================================================== */
-
-.login-page.dark {
-    --background: #181b1f;
-    --surface: #24292f;
-    --border: #3b434c;
-
-    --text-primary: #f5f7fa;
-    --text-secondary: #aab4c0;
-    --text-muted: #7f8b98;
-
-    --primary: #39d98a;
-    --primary-hover: #2fc77c;
-
-    --switch-background: #303840;
-    --switch-border: #4b5661;
-    --switch-thumb: #39d98a;
-}
-
-
-/* ==================================================
-   THEME TOGGLE
-================================================== */
-
-.theme-toggle {
-    position: absolute;
-
-    top: 24px;
-    right: 28px;
-
-    display: flex;
-    align-items: center;
-
-    gap: 8px;
-
-    z-index: 20;
-}
-
-
-.theme-label {
-    color: var(--text-primary);
-
-    font-size: 13px;
-    font-weight: 600;
-
-    white-space: nowrap;
-
-    user-select: none;
-}
-
-
-/* ==================================================
-   SWITCH
-================================================== */
-
-.theme-switch {
-    position: relative;
-
-    width: 48px;
-    height: 26px;
-
-    padding: 0;
-
-    border: 1px solid var(--switch-border);
-    border-radius: 999px;
-
-    background: var(--switch-background);
-
-    cursor: pointer;
-
-    box-sizing: border-box;
-
-    transition:
-        background-color 0.25s ease,
-        border-color 0.25s ease;
-}
-
-
-.theme-switch:hover {
-    border-color: var(--primary);
-}
-
-
-/* Bolinha */
-
-.theme-switch-thumb {
-    position: absolute;
-
-    top: 3px;
-    left: 3px;
-
-    width: 18px;
-    height: 18px;
-
-    border-radius: 50%;
-
-    background: var(--switch-thumb);
-
-    box-shadow:
-        0 2px 5px rgba(0, 0, 0, 0.25);
-
-    transition:
-        transform 0.25s ease,
-        background-color 0.25s ease;
-}
-
-
-/* Light */
-
-.theme-switch.light .theme-switch-thumb {
-    transform: translateX(0);
-}
-
-
-/* Dark */
-
-.theme-switch.dark {
-    background: #26332d;
-    border-color: #456254;
-}
-
-
-.theme-switch.dark .theme-switch-thumb {
-    transform: translateX(22px);
-
-    background: var(--primary);
 }
 
 
@@ -201,9 +62,6 @@
     margin-bottom: 30px;
 }
 
-
-/* Bankly */
-
 .login-logo {
     display: inline-block;
 
@@ -225,7 +83,7 @@
     line-height: 1;
 
     text-shadow:
-        0 5px 18px rgba(16, 185, 129, 0.18);
+        0 5px 18px rgba(57, 217, 138, 0.16);
 }
 
 
@@ -238,11 +96,6 @@
 
     color: var(--text-primary);
 
-    font-family:
-        "Segoe UI",
-        Arial,
-        sans-serif;
-
     font-size: 30px;
     font-weight: 700;
 
@@ -251,14 +104,12 @@
     line-height: 1.2;
 }
 
-
 .login-brand p {
     margin: 0;
 
     color: var(--text-secondary);
 
     font-size: 14px;
-    font-weight: 400;
 
     line-height: 1.5;
 }
@@ -291,7 +142,6 @@
     gap: 7px;
 }
 
-
 .form-group label {
     color: var(--text-primary);
 
@@ -316,6 +166,7 @@
     border-radius: 10px;
 
     background: var(--surface);
+
     color: var(--text-primary);
 
     font-family:
@@ -329,22 +180,19 @@
 
     transition:
         border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        background-color 0.3s ease,
-        color 0.3s ease;
+        box-shadow 0.2s ease;
 }
-
 
 .form-group input::placeholder {
     color: var(--text-muted);
 }
 
-
 .form-group input:focus {
     border-color: var(--primary);
 
     box-shadow:
-        0 0 0 3px rgba(16, 185, 129, 0.10);
+        0 0 0 3px
+        rgba(57, 217, 138, 0.10);
 }
 
 
@@ -358,13 +206,9 @@
     width: 100%;
 }
 
-
 .password-wrapper input {
     padding-right: 60px;
 }
-
-
-/* Show / Hide */
 
 .password-toggle {
     position: absolute;
@@ -382,25 +226,36 @@
 
     color: var(--primary);
 
-    font-family:
-        "Segoe UI",
-        Arial,
-        sans-serif;
-
     font-size: 12px;
     font-weight: 600;
 
     cursor: pointer;
 }
 
-
 .password-toggle:hover {
     color: var(--primary-hover);
 }
 
-
 .password-toggle:focus {
     outline: none;
+}
+
+
+/* ==================================================
+   ERROR
+================================================== */
+
+.login-error {
+    padding: 11px 12px;
+
+    border: 1px solid #5c3237;
+    border-radius: 8px;
+
+    background: #321f22;
+
+    color: #f87171;
+
+    font-size: 13px;
 }
 
 
@@ -418,12 +273,8 @@
     border-radius: 10px;
 
     background: var(--primary);
-    color: #ffffff;
 
-    font-family:
-        "Segoe UI",
-        Arial,
-        sans-serif;
+    color: #ffffff;
 
     font-size: 14px;
     font-weight: 600;
@@ -436,21 +287,19 @@
         box-shadow 0.2s ease;
 }
 
-
 .login-button:hover:not(:disabled) {
     background: var(--primary-hover);
 
     transform: translateY(-1px);
 
     box-shadow:
-        0 7px 18px rgba(16, 185, 129, 0.18);
+        0 7px 18px
+        rgba(57, 217, 138, 0.16);
 }
-
 
 .login-button:active:not(:disabled) {
     transform: translateY(0);
 }
-
 
 .login-button:disabled {
     opacity: 0.5;
@@ -476,11 +325,9 @@
     font-size: 13px;
 }
 
-
 .login-footer span {
     color: var(--text-secondary);
 }
-
 
 .login-footer a {
     color: var(--primary);
@@ -492,7 +339,6 @@
     transition: color 0.2s ease;
 }
 
-
 .login-footer a:hover {
     color: var(--primary-hover);
 }
@@ -503,14 +349,8 @@
 ================================================== */
 
 @media (max-width: 600px) {
-
     .login-page {
-        padding: 70px 18px 30px;
-    }
-
-    .theme-toggle {
-        top: 18px;
-        right: 18px;
+        padding: 30px 18px;
     }
 
     .login-card {
@@ -526,16 +366,10 @@
     }
 }
 
-
 @media (max-width: 400px) {
-
     .login-page {
         padding-left: 16px;
         padding-right: 16px;
-    }
-
-    .theme-toggle {
-        right: 14px;
     }
 
     .login-card {

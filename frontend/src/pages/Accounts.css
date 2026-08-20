@@ -1,0 +1,161 @@
+.accounts-page {
+    min-height: 100vh;
+    display: flex;
+
+    background-color: #181b1f;
+    color: #f5f7fa;
+}
+
+.accounts-main {
+    flex: 1;
+    padding: 32px 40px;
+    box-sizing: border-box;
+}
+
+.accounts-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.accounts-page-header h2 {
+    margin: 0;
+    color: #f5f7fa;
+    font-size: 24px;
+}
+
+.accounts-page-header p {
+    margin-top: 6px;
+    color: #aab4c0;
+}
+
+.create-account-button {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background-color: #39d98a;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.create-account-button:hover {
+    background-color: #2fc77c;
+}
+
+.accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.account-card {
+    padding: 24px;
+    border: 1px solid #3b434c;
+    border-radius: 14px;
+    background-color: #24292f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.account-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.account-label {
+    color: #aab4c0;
+    font-size: 13px;
+}
+
+.account-card-header h3 {
+    margin-top: 8px;
+    color: #f5f7fa;
+    font-size: 20px;
+    letter-spacing: 1px;
+}
+
+.account-status {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.account-status.active {
+    background-color: #19352a;
+    color: #39d98a;
+}
+
+.account-status.inactive {
+    background-color: #3a2426;
+    color: #ef6b6b;
+}
+
+.account-card-balance {
+    margin-top: 35px;
+}
+
+.account-card-balance span {
+    display: block;
+    color: #aab4c0;
+    font-size: 13px;
+}
+
+.account-card-balance strong {
+    display: block;
+    margin-top: 8px;
+    color: #f5f7fa;
+    font-size: 30px;
+}
+
+.account-card-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.account-card-actions button {
+    padding: 10px;
+    border: 1px solid #3b434c;
+    border-radius: 7px;
+    background-color: #1e2328;
+    color: #d5dde3;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.account-card-actions button:hover {
+    border-color: #39d98a;
+    color: #39d98a;
+}
+
+@media (max-width: 900px) {
+    .accounts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .accounts-main {
+        padding: 24px;
+    }
+
+    .accounts-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .create-account-button {
+        width: 100%;
+    }
+
+    .account-card-actions {
+        grid-template-columns: 1fr;
+    }
+}

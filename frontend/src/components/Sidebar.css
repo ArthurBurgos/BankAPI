@@ -1,0 +1,134 @@
+.sidebar {
+    width: 230px;
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 28px 16px;
+
+    background-color: #111417;
+    border-right: 1px solid #20252a;
+
+    box-sizing: border-box;
+}
+
+.sidebar-logo {
+    margin: 0 10px 42px;
+
+    color: #39d98a;
+
+    font-family:
+        "Trebuchet MS",
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 25px;
+    font-weight: 800;
+
+    letter-spacing: -1.5px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+.nav-link {
+    padding: 11px 12px;
+
+    border-radius: 8px;
+
+    color: #aab4c0;
+
+    text-decoration: none;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    transition:
+        color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.nav-link:hover {
+    background-color: #1c2227;
+
+    color: #f5f7fa;
+}
+
+.nav-link.active {
+    background-color: #1d3027;
+
+    color: #39d98a;
+
+    font-weight: 600;
+}
+
+.logout-button {
+    margin-top: auto;
+
+    width: 100%;
+
+    padding: 11px 12px;
+
+    border: 1px solid #2b3236;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #aab4c0;
+
+    font-size: 13px;
+
+    cursor: pointer;
+
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.logout-button:hover {
+    color: #39d98a;
+
+    border-color: #39d98a;
+
+    background-color: rgba(57, 217, 138, 0.06);
+}
+
+@media (max-width: 850px) {
+    .sidebar {
+        width: 190px;
+    }
+}
+
+@media (max-width: 700px) {
+    .sidebar {
+        width: 72px;
+
+        padding: 24px 10px;
+    }
+
+    .sidebar-logo {
+        font-size: 20px;
+
+        margin-left: 0;
+        margin-right: 0;
+
+        text-align: center;
+    }
+
+    .nav-link {
+        font-size: 0;
+
+        text-align: center;
+    }
+
+    .logout-button {
+        font-size: 0;
+    }
+}
