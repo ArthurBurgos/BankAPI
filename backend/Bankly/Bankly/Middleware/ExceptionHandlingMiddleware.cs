@@ -32,9 +32,7 @@ namespace Bankly.Middleware
                     context.Request.Path
                 );
 
-                await HandleExceptionAsync(
-                    context
-                );
+                await HandleExceptionAsync(context);
             }
         }
 
@@ -49,8 +47,7 @@ namespace Bankly.Middleware
             context.Response.Clear();
 
             context.Response.StatusCode =
-                (int)HttpStatusCode
-                    .InternalServerError;
+                (int)HttpStatusCode.InternalServerError;
 
             context.Response.ContentType =
                 "application/json";
@@ -58,21 +55,16 @@ namespace Bankly.Middleware
             var response = new
             {
                 statusCode =
-                    StatusCodes
-                        .Status500InternalServerError,
+                    StatusCodes.Status500InternalServerError,
 
                 message =
                     "An unexpected error occurred."
             };
 
             var json =
-                JsonSerializer.Serialize(
-                    response
-                );
+                JsonSerializer.Serialize(response);
 
-            await context.Response.WriteAsync(
-                json
-            );
+            await context.Response.WriteAsync(json);
         }
     }
 }
