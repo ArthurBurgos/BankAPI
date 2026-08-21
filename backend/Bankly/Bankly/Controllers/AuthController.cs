@@ -2,6 +2,7 @@
 using Bankly.DTOs;
 using Bankly.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -26,43 +27,62 @@ namespace Bankly.Controllers
 
         // POST: api/auth/register
         [HttpPost("register")]
-        public async Task<ActionResult> Register(RegisterRequest request)
+        public async Task<ActionResult> Register(
+            RegisterRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Username))
-                return BadRequest("Username is required.");
+            var normalizedUsername =
+                request.Username.Trim();
 
-            if (string.IsNullOrWhiteSpace(request.Email))
-                return BadRequest("Email is required.");
+            var normalizedEmail =
+                request.Email.Trim();
 
-            if (string.IsNullOrWhiteSpace(request.Password))
-                return BadRequest("Password is required.");
-
-            if (request.Password.Length < 6)
-                return BadRequest("Password must contain at least 6 characters.");
-
-            var customer = await _context.Customers.FindAsync(request.CustomerId);
+            var customer = await _context.Customers
+                .FindAsync(request.CustomerId);
 
             if (customer == null)
-                return BadRequest("Customer not found.");
+            {
+                return BadRequest(
+                    "Customer not found."
+                );
+            }
 
-            var usernameExists = _context.Users
-                .Any(user => user.Username == request.Username);
+            var usernameExists =
+                await _context.Users.AnyAsync(
+                    user =>
+                        user.Username ==
+                        normalizedUsername
+                );
 
             if (usernameExists)
-                return Conflict("Username is already in use.");
+            {
+                return Conflict(
+                    "Username is already in use."
+                );
+            }
 
-            var emailExists = _context.Users
-                .Any(user => user.Email == request.Email);
+            var emailExists =
+                await _context.Users.AnyAsync(
+                    user =>
+                        user.Email ==
+                        normalizedEmail
+                );
 
             if (emailExists)
-                return Conflict("Email is already in use.");
+            {
+                return Conflict(
+                    "Email is already in use."
+                );
+            }
 
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            var passwordHash =
+                BCrypt.Net.BCrypt.HashPassword(
+                    request.Password
+                );
 
             var user = new User
             {
-                Username = request.Username,
-                Email = request.Email,
+                Username = normalizedUsername,
+                Email = normalizedEmail,
                 PasswordHash = passwordHash,
                 CustomerId = request.CustomerId
             };
@@ -73,74 +93,172 @@ namespace Bankly.Controllers
 
             return Ok(new
             {
-                message = "User registered successfully.",
+                message =
+                    "User registered successfully.",
+
                 userId = user.Id,
+
                 username = user.Username
             });
         }
 
         // POST: api/auth/login
         [HttpPost("login")]
-        public async Task<ActionResult<LoginResponseDto>> Login(LoginRequest request)
+        public async Task<ActionResult<LoginResponseDto>>
+            Login(LoginRequest request)
         {
-            var user = _context.Users
-                .FirstOrDefault(user => user.Username == request.Username);
+            var normalizedUsername =
+                request.Username.Trim();
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(
+                    user =>
+                        user.Username ==
+                        normalizedUsername
+                );
 
             if (user == null)
-                return Unauthorized("Invalid username or password.");
+            {
+                return Unauthorized(
+                    "Invalid username or password."
+                );
+            }
 
-            var passwordValid = BCrypt.Net.BCrypt.Verify(
-                request.Password,
-                user.PasswordHash
-            );
+            var passwordValid =
+                BCrypt.Net.BCrypt.Verify(
+                    request.Password,
+                    user.PasswordHash
+                );
 
             if (!passwordValid)
-                return Unauthorized("Invalid username or password.");
-
-            var token = GenerateToken(user);
-
-            var response = new LoginResponseDto
             {
-                Token = token,
-                UserId = user.Id,
-                CustomerId = user.CustomerId,
-                Username = user.Username
-            };
+                return Unauthorized(
+                    "Invalid username or password."
+                );
+            }
+
+            var token =
+                GenerateToken(user);
+
+            var response =
+                new LoginResponseDto
+                {
+                    Token = token,
+                    UserId = user.Id,
+                    CustomerId =
+                        user.CustomerId,
+                    Username =
+                        user.Username
+                };
 
             return Ok(response);
         }
 
-        private string GenerateToken(User user)
+        private string GenerateToken(
+            User user)
         {
-            var claims = new List<Claim>
+            var jwtKey =
+                _configuration["Jwt:Key"];
+
+            var jwtIssuer =
+                _configuration["Jwt:Issuer"];
+
+            var jwtAudience =
+                _configuration["Jwt:Audience"];
+
+            var expirationValue =
+                _configuration[
+                    "Jwt:ExpirationMinutes"
+                ];
+
+            if (string.IsNullOrWhiteSpace(jwtKey))
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim("CustomerId", user.CustomerId.ToString())
-            };
+                throw new InvalidOperationException(
+                    "JWT key is not configured."
+                );
+            }
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(
-                    _configuration["Jwt:Key"]!
+            if (
+                string.IsNullOrWhiteSpace(
+                    jwtIssuer
                 )
-            );
+            )
+            {
+                throw new InvalidOperationException(
+                    "JWT issuer is not configured."
+                );
+            }
 
-            var credentials = new SigningCredentials(
-                key,
-                SecurityAlgorithms.HmacSha256
-            );
+            if (
+                string.IsNullOrWhiteSpace(
+                    jwtAudience
+                )
+            )
+            {
+                throw new InvalidOperationException(
+                    "JWT audience is not configured."
+                );
+            }
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(
-                    int.Parse(_configuration["Jwt:ExpirationMinutes"]!)
-                ),
-                signingCredentials: credentials
-            );
+            if (
+                !int.TryParse(
+                    expirationValue,
+                    out var expirationMinutes
+                )
+            )
+            {
+                throw new InvalidOperationException(
+                    "JWT expiration is not configured correctly."
+                );
+            }
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var claims =
+                new List<Claim>
+                {
+                    new(
+                        ClaimTypes.NameIdentifier,
+                        user.Id.ToString()
+                    ),
+
+                    new(
+                        ClaimTypes.Name,
+                        user.Username
+                    ),
+
+                    new(
+                        "CustomerId",
+                        user.CustomerId.ToString()
+                    )
+                };
+
+            var key =
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(
+                        jwtKey
+                    )
+                );
+
+            var credentials =
+                new SigningCredentials(
+                    key,
+                    SecurityAlgorithms.HmacSha256
+                );
+
+            var token =
+                new JwtSecurityToken(
+                    issuer: jwtIssuer,
+                    audience: jwtAudience,
+                    claims: claims,
+                    expires:
+                        DateTime.UtcNow.AddMinutes(
+                            expirationMinutes
+                        ),
+                    signingCredentials:
+                        credentials
+                );
+
+            return new JwtSecurityTokenHandler()
+                .WriteToken(token);
         }
     }
 }

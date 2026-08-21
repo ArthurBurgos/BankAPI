@@ -23,53 +23,64 @@ namespace Bankly.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AccountResponseDto>>> GetAll()
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             var accounts = await _context.Accounts
-                .Where(account => account.CustomerId == customerId)
-                .Select(account => new AccountResponseDto
-                {
-                    Id = account.Id,
-                    AccountNumber = account.AccountNumber,
-                    Balance = account.Balance,
-                    IsActive = account.IsActive,
-                    CustomerId = account.CustomerId
-                })
+                .AsNoTracking()
+                .Where(account =>
+                    account.CustomerId == customerId
+                )
+                .Select(account =>
+                    new AccountResponseDto
+                    {
+                        Id = account.Id,
+                        AccountNumber =
+                            account.AccountNumber,
+                        Balance = account.Balance,
+                        IsActive = account.IsActive,
+                        CustomerId =
+                            account.CustomerId
+                    }
+                )
                 .ToListAsync();
 
             return Ok(accounts);
         }
 
         // GET: api/accounts/1
-        [HttpGet("{id}")]
-        public async Task<ActionResult<AccountResponseDto>> GetById(int id)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<AccountResponseDto>> GetById(
+            int id)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             var account = await _context.Accounts
-                .Where(account =>
+                .AsNoTracking()
+                .FirstOrDefaultAsync(account =>
                     account.Id == id &&
-                    account.CustomerId == customerId)
-                .Select(account => new AccountResponseDto
-                {
-                    Id = account.Id,
-                    AccountNumber = account.AccountNumber,
-                    Balance = account.Balance,
-                    IsActive = account.IsActive,
-                    CustomerId = account.CustomerId
-                })
-                .FirstOrDefaultAsync();
+                    account.CustomerId == customerId
+                );
 
             if (account == null)
-                return NotFound();
+            {
+                return NotFound(
+                    "Account not found."
+                );
+            }
 
-            return Ok(account);
+            return Ok(
+                MapToResponseDto(account)
+            );
         }
 
         // POST: api/accounts
@@ -77,21 +88,52 @@ namespace Bankly.Controllers
         public async Task<ActionResult<AccountResponseDto>> Create(
             CreateAccountDto dto)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            var customerExists =
+                await _context.Customers.AnyAsync(
+                    customer =>
+                        customer.Id == customerId
+                );
 
-            var customer = await _context.Customers.FindAsync(customerId);
+            if (!customerExists)
+            {
+                return BadRequest(
+                    "Customer not found."
+                );
+            }
 
-            if (customer == null)
-                return BadRequest("Customer not found.");
+            var normalizedAccountNumber =
+                dto.AccountNumber.Trim();
+
+            var accountNumberExists =
+                await _context.Accounts.AnyAsync(
+                    account =>
+                        account.AccountNumber ==
+                        normalizedAccountNumber
+                );
+
+            if (accountNumberExists)
+            {
+                return Conflict(
+                    "Account number is already in use."
+                );
+            }
 
             var account = new Account
             {
-                AccountNumber = dto.AccountNumber,
+                AccountNumber =
+                    normalizedAccountNumber,
+
                 CustomerId = customerId,
+
                 Balance = 0,
+
                 IsActive = true
             };
 
@@ -99,48 +141,58 @@ namespace Bankly.Controllers
 
             await _context.SaveChangesAsync();
 
-            var response = new AccountResponseDto
-            {
-                Id = account.Id,
-                AccountNumber = account.AccountNumber,
-                Balance = account.Balance,
-                IsActive = account.IsActive,
-                CustomerId = account.CustomerId
-            };
+            var response =
+                MapToResponseDto(account);
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = account.Id },
+                new
+                {
+                    id = account.Id
+                },
                 response
             );
         }
 
         // POST: api/accounts/1/deposit
-        [HttpPost("{id}/deposit")]
+        [HttpPost("{id:int}/deposit")]
         public async Task<ActionResult<AccountResponseDto>> Deposit(
             int id,
             DepositRequest request)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             var account = await _context.Accounts
                 .FirstOrDefaultAsync(account =>
                     account.Id == id &&
-                    account.CustomerId == customerId);
+                    account.CustomerId == customerId
+                );
 
             if (account == null)
-                return NotFound("Account not found.");
+            {
+                return NotFound(
+                    "Account not found."
+                );
+            }
 
             if (!account.IsActive)
-                return BadRequest("Account is inactive.");
+            {
+                return BadRequest(
+                    "Account is inactive."
+                );
+            }
 
             if (request.Amount <= 0)
+            {
                 return BadRequest(
                     "Deposit amount must be greater than zero."
                 );
+            }
 
             account.Balance += request.Amount;
 
@@ -152,51 +204,63 @@ namespace Bankly.Controllers
                 AccountId = account.Id
             };
 
-            _context.Transactions.Add(transaction);
+            _context.Transactions.Add(
+                transaction
+            );
 
             await _context.SaveChangesAsync();
 
-            var response = new AccountResponseDto
-            {
-                Id = account.Id,
-                AccountNumber = account.AccountNumber,
-                Balance = account.Balance,
-                IsActive = account.IsActive,
-                CustomerId = account.CustomerId
-            };
-
-            return Ok(response);
+            return Ok(
+                MapToResponseDto(account)
+            );
         }
 
         // POST: api/accounts/1/withdraw
-        [HttpPost("{id}/withdraw")]
+        [HttpPost("{id:int}/withdraw")]
         public async Task<ActionResult<AccountResponseDto>> Withdraw(
             int id,
             WithdrawRequest request)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             var account = await _context.Accounts
                 .FirstOrDefaultAsync(account =>
                     account.Id == id &&
-                    account.CustomerId == customerId);
+                    account.CustomerId == customerId
+                );
 
             if (account == null)
-                return NotFound("Account not found.");
+            {
+                return NotFound(
+                    "Account not found."
+                );
+            }
 
             if (!account.IsActive)
-                return BadRequest("Account is inactive.");
+            {
+                return BadRequest(
+                    "Account is inactive."
+                );
+            }
 
             if (request.Amount <= 0)
+            {
                 return BadRequest(
                     "Withdrawal amount must be greater than zero."
                 );
+            }
 
             if (request.Amount > account.Balance)
-                return BadRequest("Insufficient balance.");
+            {
+                return BadRequest(
+                    "Insufficient balance."
+                );
+            }
 
             account.Balance -= request.Amount;
 
@@ -208,122 +272,209 @@ namespace Bankly.Controllers
                 AccountId = account.Id
             };
 
-            _context.Transactions.Add(transaction);
+            _context.Transactions.Add(
+                transaction
+            );
 
             await _context.SaveChangesAsync();
 
-            var response = new AccountResponseDto
-            {
-                Id = account.Id,
-                AccountNumber = account.AccountNumber,
-                Balance = account.Balance,
-                IsActive = account.IsActive,
-                CustomerId = account.CustomerId
-            };
-
-            return Ok(response);
+            return Ok(
+                MapToResponseDto(account)
+            );
         }
 
         // POST: api/accounts/1/transfer
-        [HttpPost("{id}/transfer")]
+        [HttpPost("{id:int}/transfer")]
         public async Task<IActionResult> Transfer(
             int id,
             TransferRequest request)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
-
-            // The source account must belong to the authenticated user
-            var sourceAccount = await _context.Accounts
-                .FirstOrDefaultAsync(account =>
-                    account.Id == id &&
-                    account.CustomerId == customerId);
-
-            if (sourceAccount == null)
-                return NotFound("Source account not found.");
-
-            // The destination account may belong to another customer
-            var destinationAccount = await _context.Accounts
-                .FindAsync(request.DestinationAccountId);
-
-            if (destinationAccount == null)
-                return NotFound("Destination account not found.");
-
-            if (sourceAccount.Id == destinationAccount.Id)
-                return BadRequest(
-                    "Source and destination accounts must be different."
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
                 );
-
-            if (!sourceAccount.IsActive)
-                return BadRequest("Source account is inactive.");
-
-            if (!destinationAccount.IsActive)
-                return BadRequest("Destination account is inactive.");
+            }
 
             if (request.Amount <= 0)
+            {
                 return BadRequest(
                     "Transfer amount must be greater than zero."
                 );
+            }
 
-            if (request.Amount > sourceAccount.Balance)
-                return BadRequest("Insufficient balance.");
-
-            sourceAccount.Balance -= request.Amount;
-
-            destinationAccount.Balance += request.Amount;
-
-            var sourceTransaction = new Transaction
+            if (
+                request.DestinationAccountId <= 0
+            )
             {
-                Amount = request.Amount,
-                Date = DateTime.UtcNow,
-                Type = "Transfer Out",
-                AccountId = sourceAccount.Id
-            };
+                return BadRequest(
+                    "Destination account ID is invalid."
+                );
+            }
 
-            var destinationTransaction = new Transaction
+            await using var databaseTransaction =
+                await _context.Database
+                    .BeginTransactionAsync();
+
+            try
             {
-                Amount = request.Amount,
-                Date = DateTime.UtcNow,
-                Type = "Transfer In",
-                AccountId = destinationAccount.Id
-            };
+                var sourceAccount =
+                    await _context.Accounts
+                        .FirstOrDefaultAsync(
+                            account =>
+                                account.Id == id &&
+                                account.CustomerId ==
+                                customerId
+                        );
 
-            _context.Transactions.Add(sourceTransaction);
-            _context.Transactions.Add(destinationTransaction);
+                if (sourceAccount == null)
+                {
+                    return NotFound(
+                        "Source account not found."
+                    );
+                }
 
-            await _context.SaveChangesAsync();
+                var destinationAccount =
+                    await _context.Accounts
+                        .FirstOrDefaultAsync(
+                            account =>
+                                account.Id ==
+                                request
+                                    .DestinationAccountId
+                        );
 
-            return Ok(new
+                if (destinationAccount == null)
+                {
+                    return NotFound(
+                        "Destination account not found."
+                    );
+                }
+
+                if (
+                    sourceAccount.Id ==
+                    destinationAccount.Id
+                )
+                {
+                    return BadRequest(
+                        "Source and destination accounts must be different."
+                    );
+                }
+
+                if (!sourceAccount.IsActive)
+                {
+                    return BadRequest(
+                        "Source account is inactive."
+                    );
+                }
+
+                if (!destinationAccount.IsActive)
+                {
+                    return BadRequest(
+                        "Destination account is inactive."
+                    );
+                }
+
+                if (
+                    request.Amount >
+                    sourceAccount.Balance
+                )
+                {
+                    return BadRequest(
+                        "Insufficient balance."
+                    );
+                }
+
+                sourceAccount.Balance -=
+                    request.Amount;
+
+                destinationAccount.Balance +=
+                    request.Amount;
+
+                var transactionDate =
+                    DateTime.UtcNow;
+
+                var sourceTransaction =
+                    new Transaction
+                    {
+                        Amount = request.Amount,
+                        Date = transactionDate,
+                        Type = "Transfer Out",
+                        AccountId =
+                            sourceAccount.Id
+                    };
+
+                var destinationTransaction =
+                    new Transaction
+                    {
+                        Amount = request.Amount,
+                        Date = transactionDate,
+                        Type = "Transfer In",
+                        AccountId =
+                            destinationAccount.Id
+                    };
+
+                _context.Transactions.AddRange(
+                    sourceTransaction,
+                    destinationTransaction
+                );
+
+                await _context.SaveChangesAsync();
+
+                await databaseTransaction
+                    .CommitAsync();
+
+                return Ok(new
+                {
+                    message =
+                        "Transfer completed successfully.",
+
+                    amount =
+                        request.Amount,
+
+                    sourceAccountId =
+                        sourceAccount.Id,
+
+                    destinationAccountId =
+                        destinationAccount.Id
+                });
+            }
+            catch
             {
-                message = "Transfer completed successfully.",
-                amount = request.Amount,
-                sourceAccountId = sourceAccount.Id,
-                destinationAccountId = destinationAccount.Id
-            });
+                await databaseTransaction
+                    .RollbackAsync();
+
+                throw;
+            }
         }
 
         // PUT: api/accounts/1
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(
             int id,
             UpdateAccountDto dto)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             var account = await _context.Accounts
                 .FirstOrDefaultAsync(account =>
                     account.Id == id &&
-                    account.CustomerId == customerId);
+                    account.CustomerId == customerId
+                );
 
             if (account == null)
-                return NotFound();
+            {
+                return NotFound(
+                    "Account not found."
+                );
+            }
 
-            account.IsActive = dto.IsActive;
+            account.IsActive =
+                dto.IsActive;
 
             await _context.SaveChangesAsync();
 
@@ -331,27 +482,70 @@ namespace Bankly.Controllers
         }
 
         // DELETE: api/accounts/1
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(
+            int id)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             var account = await _context.Accounts
                 .FirstOrDefaultAsync(account =>
                     account.Id == id &&
-                    account.CustomerId == customerId);
+                    account.CustomerId == customerId
+                );
 
             if (account == null)
-                return NotFound();
+            {
+                return NotFound(
+                    "Account not found."
+                );
+            }
 
             _context.Accounts.Remove(account);
 
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        private bool TryGetCustomerId(
+            out int customerId)
+        {
+            var customerIdClaim =
+                User.FindFirst(
+                    "CustomerId"
+                )?.Value;
+
+            return int.TryParse(
+                customerIdClaim,
+                out customerId
+            );
+        }
+
+        private static AccountResponseDto MapToResponseDto(
+            Account account)
+        {
+            return new AccountResponseDto
+            {
+                Id = account.Id,
+
+                AccountNumber =
+                    account.AccountNumber,
+
+                Balance =
+                    account.Balance,
+
+                IsActive =
+                    account.IsActive,
+
+                CustomerId =
+                    account.CustomerId
+            };
         }
     }
 }

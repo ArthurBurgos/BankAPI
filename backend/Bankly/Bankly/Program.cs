@@ -8,90 +8,201 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ========================================
+// Configuration
+// ========================================
+
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Database connection string is not configured."
+    );
+}
+
+var jwtKey =
+    builder.Configuration["Jwt:Key"];
+
+var jwtIssuer =
+    builder.Configuration["Jwt:Issuer"];
+
+var jwtAudience =
+    builder.Configuration["Jwt:Audience"];
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException(
+        "JWT key is not configured."
+    );
+}
+
+if (string.IsNullOrWhiteSpace(jwtIssuer))
+{
+    throw new InvalidOperationException(
+        "JWT issuer is not configured."
+    );
+}
+
+if (string.IsNullOrWhiteSpace(jwtAudience))
+{
+    throw new InvalidOperationException(
+        "JWT audience is not configured."
+    );
+}
+
+// ========================================
 // Controllers
+// ========================================
+
 builder.Services.AddControllers();
 
+// ========================================
+// CORS
+// ========================================
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "Frontend",
+        policy =>
+        {
+            policy
+                .WithOrigins(
+                    "http://localhost:5173",
+                    "http://localhost:5174"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    );
+});
+
+// ========================================
 // Swagger
+// ========================================
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Digite o token JWT."
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+    options.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
+            Title = "Bankly API",
+            Version = "v1",
+            Description =
+                "REST API for the Bankly banking application."
         }
-    });
+    );
+
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description =
+                "Enter the JWT access token."
+        }
+    );
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference =
+                        new OpenApiReference
+                        {
+                            Type =
+                                ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                },
+                Array.Empty<string>()
+            }
+        }
+    );
 });
 
+// ========================================
 // Database
-builder.Services.AddDbContext<BankDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    )
+// ========================================
+
+builder.Services.AddDbContext<BankDbContext>(
+    options =>
+        options.UseNpgsql(connectionString)
 );
 
-// JWT Authentication
-builder.Services.AddAuthentication(
-    JwtBearerDefaults.AuthenticationScheme
-)
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+// ========================================
+// Authentication
+// ========================================
+
+builder.Services
+    .AddAuthentication(options =>
     {
-        ValidateIssuerSigningKey = true,
+        options.DefaultAuthenticateScheme =
+            JwtBearerDefaults.AuthenticationScheme;
 
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(
-                builder.Configuration["Jwt:Key"]!
-            )
-        ),
+        options.DefaultChallengeScheme =
+            JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters =
+            new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
 
-        ValidateIssuer = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)
+                    ),
 
-        ValidateAudience = true,
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+                ValidateIssuer = true,
+                ValidIssuer = jwtIssuer,
 
-        ValidateLifetime = true,
+                ValidateAudience = true,
+                ValidAudience = jwtAudience,
 
-        ClockSkew = TimeSpan.Zero
-    };
-});
+                ValidateLifetime = true,
 
+                ClockSkew = TimeSpan.Zero
+            };
+    });
+
+// ========================================
 // Authorization
+// ========================================
+
 builder.Services.AddAuthorization();
+
+// ========================================
+// Application
+// ========================================
 
 var app = builder.Build();
 
-// HTTP request pipeline
+// ========================================
+// Middleware Pipeline
+// ========================================
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseCors("Frontend");
 
 app.UseAuthentication();
 

@@ -7,8 +7,5 @@ namespace Bankly.DTOs
         [Required]
         [StringLength(20)]
         public string AccountNumber { get; set; } = string.Empty;
-
-        [Required]
-        public int CustomerId { get; set; }
     }
 }

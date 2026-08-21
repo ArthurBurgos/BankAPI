@@ -4,7 +4,11 @@ namespace Bankly.DTOs
 {
     public class DepositRequest
     {
-        [Range(0.01, 1000000)]
+        [Range(
+            typeof(decimal),
+            "0.01",
+            "9999999999999999.99"
+        )]
         public decimal Amount { get; set; }
     }
 }

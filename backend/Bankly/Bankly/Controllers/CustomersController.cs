@@ -14,61 +14,108 @@ namespace Bankly.Controllers
     {
         private readonly BankDbContext _context;
 
-        public CustomersController(BankDbContext context)
+        public CustomersController(
+            BankDbContext context)
         {
             _context = context;
         }
 
         // GET: api/customers
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CustomerResponseDto>>> GetAll()
+        public async Task<
+            ActionResult<
+                IEnumerable<CustomerResponseDto>
+            >
+        > GetAll()
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            var customers =
+                await _context.Customers
+                    .AsNoTracking()
+                    .Where(customer =>
+                        customer.Id ==
+                        customerId
+                    )
+                    .Select(customer =>
+                        new CustomerResponseDto
+                        {
+                            Id =
+                                customer.Id,
 
-            var customers = await _context.Customers
-                .Where(customer => customer.Id == customerId)
-                .Select(customer => new CustomerResponseDto
-                {
-                    Id = customer.Id,
-                    FirstName = customer.FirstName,
-                    LastName = customer.LastName,
-                    Email = customer.Email,
-                    PhoneNumber = customer.PhoneNumber
-                })
-                .ToListAsync();
+                            FirstName =
+                                customer.FirstName,
+
+                            LastName =
+                                customer.LastName,
+
+                            Email =
+                                customer.Email,
+
+                            PhoneNumber =
+                                customer.PhoneNumber
+                        }
+                    )
+                    .ToListAsync();
 
             return Ok(customers);
         }
 
         // GET: api/customers/1
-        [HttpGet("{id}")]
-        public async Task<ActionResult<CustomerResponseDto>> GetById(int id)
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<CustomerResponseDto>>
+            GetById(int id)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             if (id != customerId)
+            {
                 return Forbid();
+            }
 
-            var customer = await _context.Customers
-                .Where(customer => customer.Id == id)
-                .Select(customer => new CustomerResponseDto
-                {
-                    Id = customer.Id,
-                    FirstName = customer.FirstName,
-                    LastName = customer.LastName,
-                    Email = customer.Email,
-                    PhoneNumber = customer.PhoneNumber
-                })
-                .FirstOrDefaultAsync();
+            var customer =
+                await _context.Customers
+                    .AsNoTracking()
+                    .Where(customer =>
+                        customer.Id == id
+                    )
+                    .Select(customer =>
+                        new CustomerResponseDto
+                        {
+                            Id =
+                                customer.Id,
+
+                            FirstName =
+                                customer.FirstName,
+
+                            LastName =
+                                customer.LastName,
+
+                            Email =
+                                customer.Email,
+
+                            PhoneNumber =
+                                customer.PhoneNumber
+                        }
+                    )
+                    .FirstOrDefaultAsync();
 
             if (customer == null)
-                return NotFound();
+            {
+                return NotFound(
+                    "Customer not found."
+                );
+            }
 
             return Ok(customer);
         }
@@ -77,60 +124,129 @@ namespace Bankly.Controllers
         // Required before user registration
         [AllowAnonymous]
         [HttpPost]
-        public async Task<ActionResult<CustomerResponseDto>> Create(
-            CreateCustomerDto dto)
+        public async Task<ActionResult<CustomerResponseDto>>
+            Create(CreateCustomerDto dto)
         {
+            var normalizedFirstName =
+                dto.FirstName.Trim();
+
+            var normalizedLastName =
+                dto.LastName.Trim();
+
+            var normalizedEmail =
+                dto.Email.Trim();
+
+            var normalizedPhoneNumber =
+                dto.PhoneNumber.Trim();
+
+            var emailExists =
+                await _context.Customers
+                    .AnyAsync(customer =>
+                        customer.Email ==
+                        normalizedEmail
+                    );
+
+            if (emailExists)
+            {
+                return Conflict(
+                    "Email is already associated with a customer."
+                );
+            }
+
             var customer = new Customer
             {
-                FirstName = dto.FirstName,
-                LastName = dto.LastName,
-                Email = dto.Email,
-                PhoneNumber = dto.PhoneNumber
+                FirstName =
+                    normalizedFirstName,
+
+                LastName =
+                    normalizedLastName,
+
+                Email =
+                    normalizedEmail,
+
+                PhoneNumber =
+                    normalizedPhoneNumber
             };
 
-            _context.Customers.Add(customer);
+            _context.Customers.Add(
+                customer
+            );
 
             await _context.SaveChangesAsync();
 
-            var response = new CustomerResponseDto
-            {
-                Id = customer.Id,
-                FirstName = customer.FirstName,
-                LastName = customer.LastName,
-                Email = customer.Email,
-                PhoneNumber = customer.PhoneNumber
-            };
+            var response =
+                MapToResponseDto(
+                    customer
+                );
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = customer.Id },
+                new
+                {
+                    id = customer.Id
+                },
                 response
             );
         }
 
         // PUT: api/customers/1
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(
             int id,
             UpdateCustomerDto dto)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             if (id != customerId)
+            {
                 return Forbid();
+            }
 
-            var customer = await _context.Customers.FindAsync(id);
+            var customer =
+                await _context.Customers
+                    .FindAsync(id);
 
             if (customer == null)
-                return NotFound();
+            {
+                return NotFound(
+                    "Customer not found."
+                );
+            }
 
-            customer.FirstName = dto.FirstName;
-            customer.LastName = dto.LastName;
-            customer.Email = dto.Email;
-            customer.PhoneNumber = dto.PhoneNumber;
+            var normalizedEmail =
+                dto.Email.Trim();
+
+            var emailExists =
+                await _context.Customers
+                    .AnyAsync(otherCustomer =>
+                        otherCustomer.Id != id &&
+                        otherCustomer.Email ==
+                        normalizedEmail
+                    );
+
+            if (emailExists)
+            {
+                return Conflict(
+                    "Email is already associated with another customer."
+                );
+            }
+
+            customer.FirstName =
+                dto.FirstName.Trim();
+
+            customer.LastName =
+                dto.LastName.Trim();
+
+            customer.Email =
+                normalizedEmail;
+
+            customer.PhoneNumber =
+                dto.PhoneNumber.Trim();
 
             await _context.SaveChangesAsync();
 
@@ -138,27 +254,77 @@ namespace Bankly.Controllers
         }
 
         // DELETE: api/customers/1
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(
+            int id)
         {
-            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-
-            if (!int.TryParse(customerIdClaim, out int customerId))
-                return Unauthorized("Invalid customer identity.");
+            if (!TryGetCustomerId(out var customerId))
+            {
+                return Unauthorized(
+                    "Invalid customer identity."
+                );
+            }
 
             if (id != customerId)
+            {
                 return Forbid();
+            }
 
-            var customer = await _context.Customers.FindAsync(id);
+            var customer =
+                await _context.Customers
+                    .FindAsync(id);
 
             if (customer == null)
-                return NotFound();
+            {
+                return NotFound(
+                    "Customer not found."
+                );
+            }
 
-            _context.Customers.Remove(customer);
+            _context.Customers.Remove(
+                customer
+            );
 
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        private bool TryGetCustomerId(
+            out int customerId)
+        {
+            var customerIdClaim =
+                User.FindFirst(
+                    "CustomerId"
+                )?.Value;
+
+            return int.TryParse(
+                customerIdClaim,
+                out customerId
+            );
+        }
+
+        private static CustomerResponseDto
+            MapToResponseDto(
+                Customer customer)
+        {
+            return new CustomerResponseDto
+            {
+                Id =
+                    customer.Id,
+
+                FirstName =
+                    customer.FirstName,
+
+                LastName =
+                    customer.LastName,
+
+                Email =
+                    customer.Email,
+
+                PhoneNumber =
+                    customer.PhoneNumber
+            };
         }
     }
 }
