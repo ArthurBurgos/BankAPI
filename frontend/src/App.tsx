@@ -2,7 +2,7 @@ import {
     BrowserRouter,
     Navigate,
     Route,
-    Routes
+    Routes,
 } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -12,6 +12,8 @@ import Accounts from "./pages/Accounts";
 import Transactions from "./pages/Transactions";
 import Transfer from "./pages/Transfer";
 import Settings from "./pages/Settings";
+
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
     return (
@@ -29,27 +31,47 @@ function App() {
 
                 <Route
                     path="/dashboard"
-                    element={<Dashboard />}
+                    element={
+                        <ProtectedRoute>
+                            <Dashboard />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/accounts"
-                    element={<Accounts />}
+                    element={
+                        <ProtectedRoute>
+                            <Accounts />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/transactions"
-                    element={<Transactions />}
+                    element={
+                        <ProtectedRoute>
+                            <Transactions />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
-                     path="/transfer"
-                     element={<Transfer />}
+                    path="/transfer"
+                    element={
+                        <ProtectedRoute>
+                            <Transfer />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route
                     path="/settings"
-                    element={<Settings />}
+                    element={
+                        <ProtectedRoute>
+                            <Settings />
+                        </ProtectedRoute>
+                    }
                 />
 
                 <Route

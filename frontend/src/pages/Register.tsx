@@ -1,7 +1,6 @@
 import { useState, type SubmitEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Register.css";
-import { useTheme } from "../contexts/ThemeContext";
 
 interface CustomerResponse {
     id: number;
@@ -27,7 +26,6 @@ function Register() {
     const [errorMessage, setErrorMessage] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
 
-    const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
 
     const handleSubmit = async (
@@ -70,7 +68,6 @@ function Register() {
         setIsLoading(true);
 
         try {
-            // Step 1: Create the customer
             const customerResponse = await fetch(
                 "http://localhost:5000/api/Customers",
                 {
@@ -102,7 +99,6 @@ function Register() {
             const customer: CustomerResponse =
                 await customerResponse.json();
 
-            // Step 2: Create the user account
             const registerResponse = await fetch(
                 "http://localhost:5000/api/Auth/register",
                 {
@@ -113,7 +109,7 @@ function Register() {
                     body: JSON.stringify({
                         username: username.trim(),
                         email: email.trim(),
-                        password: password,
+                        password,
                         customerId: customer.id,
                     }),
                 }
@@ -153,40 +149,9 @@ function Register() {
     };
 
     return (
-        <main className={`register-page ${theme}`}>
-
-            {/* Theme Toggle */}
-            <div className="theme-toggle">
-
-                <span className="theme-label">
-                    Light
-                </span>
-
-                <button
-                    type="button"
-                    className={`theme-switch ${
-                        theme === "dark"
-                            ? "dark"
-                            : "light"
-                    }`}
-                    onClick={toggleTheme}
-                    aria-label="Toggle theme"
-                >
-                    <span className="theme-switch-thumb"></span>
-                </button>
-
-                <span className="theme-label">
-                    Dark
-                </span>
-
-            </div>
-
-            {/* Register */}
+        <main className="register-page">
             <section className="register-card">
-
-                {/* Brand */}
                 <div className="register-brand">
-
                     <div className="register-logo">
                         Bankly
                     </div>
@@ -198,16 +163,12 @@ function Register() {
                     <p>
                         Join Bankly and manage your finances
                     </p>
-
                 </div>
 
-                {/* Form */}
                 <form
                     className="register-form"
                     onSubmit={handleSubmit}
                 >
-
-                    {/* First Name */}
                     <div className="form-group">
                         <label htmlFor="firstName">
                             First name
@@ -227,7 +188,6 @@ function Register() {
                         />
                     </div>
 
-                    {/* Last Name */}
                     <div className="form-group">
                         <label htmlFor="lastName">
                             Last name
@@ -247,7 +207,6 @@ function Register() {
                         />
                     </div>
 
-                    {/* Email */}
                     <div className="form-group">
                         <label htmlFor="email">
                             Email
@@ -267,7 +226,6 @@ function Register() {
                         />
                     </div>
 
-                    {/* Phone */}
                     <div className="form-group">
                         <label htmlFor="phoneNumber">
                             Phone number
@@ -287,7 +245,6 @@ function Register() {
                         />
                     </div>
 
-                    {/* Username */}
                     <div className="form-group">
                         <label htmlFor="username">
                             Username
@@ -307,14 +264,12 @@ function Register() {
                         />
                     </div>
 
-                    {/* Password */}
                     <div className="form-group">
                         <label htmlFor="password">
                             Password
                         </label>
 
                         <div className="password-wrapper">
-
                             <input
                                 id="password"
                                 type={
@@ -345,18 +300,15 @@ function Register() {
                                     ? "Hide"
                                     : "Show"}
                             </button>
-
                         </div>
                     </div>
 
-                    {/* Confirm Password */}
                     <div className="form-group">
                         <label htmlFor="confirmPassword">
                             Confirm password
                         </label>
 
                         <div className="password-wrapper">
-
                             <input
                                 id="confirmPassword"
                                 type={
@@ -387,25 +339,21 @@ function Register() {
                                     ? "Hide"
                                     : "Show"}
                             </button>
-
                         </div>
                     </div>
 
-                    {/* Error */}
                     {errorMessage && (
                         <div className="register-error">
                             {errorMessage}
                         </div>
                     )}
 
-                    {/* Success */}
                     {successMessage && (
                         <div className="register-success">
                             {successMessage}
                         </div>
                     )}
 
-                    {/* Submit */}
                     <button
                         type="submit"
                         className="register-button"
@@ -415,12 +363,9 @@ function Register() {
                             ? "Creating account..."
                             : "Create account →"}
                     </button>
-
                 </form>
 
-                {/* Footer */}
                 <div className="register-footer">
-
                     <span>
                         Already have an account?
                     </span>
@@ -428,11 +373,8 @@ function Register() {
                     <Link to="/login">
                         Sign in
                     </Link>
-
                 </div>
-
             </section>
-
         </main>
     );
 }

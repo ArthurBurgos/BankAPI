@@ -1,72 +1,145 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import "./Dashboard.css";
-
-interface Transaction {
-    id: number;
-    type: "Deposit" | "Withdrawal" | "Transfer";
-    description: string;
-    date: string;
-    amount: number;
-}
 
 interface Account {
     id: number;
     accountNumber: string;
     balance: number;
     isActive: boolean;
+    customerId: number;
 }
 
-const mockTransactions: Transaction[] = [
-    {
-        id: 1,
-        type: "Deposit",
-        description: "Salary",
-        date: "Aug 18, 2026",
-        amount: 1500,
-    },
-    {
-        id: 2,
-        type: "Withdrawal",
-        description: "Grocery Store",
-        date: "Aug 17, 2026",
-        amount: -85.5,
-    },
-    {
-        id: 3,
-        type: "Transfer",
-        description: "Transfer to savings",
-        date: "Aug 16, 2026",
-        amount: -250,
-    },
-];
-
-const mockAccounts: Account[] = [
-    {
-        id: 1,
-        accountNumber: "**** 4821",
-        balance: 2450.5,
-        isActive: true,
-    },
-    {
-        id: 2,
-        accountNumber: "**** 7319",
-        balance: 850,
-        isActive: true,
-    },
-];
+interface Transaction {
+    id: number;
+    amount: number;
+    date: string;
+    type: string;
+    accountId: number;
+}
 
 function Dashboard() {
-    const totalBalance = mockAccounts.reduce(
+    const navigate = useNavigate();
+
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+    const [isLoadingAccounts, setIsLoadingAccounts] =
+        useState(true);
+
+    const [isLoadingTransactions, setIsLoadingTransactions] =
+        useState(true);
+
+    const [errorMessage, setErrorMessage] =
+        useState("");
+
+    useEffect(() => {
+        const loadDashboard = async () => {
+            const token =
+                localStorage.getItem("token");
+
+            if (!token) {
+                setErrorMessage(
+                    "Authentication token not found."
+                );
+
+                setIsLoadingAccounts(false);
+                setIsLoadingTransactions(false);
+
+                return;
+            }
+
+            try {
+                const [
+                    accountsResponse,
+                    transactionsResponse,
+                ] = await Promise.all([
+                    fetch(
+                        "http://localhost:5000/api/accounts",
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    ),
+
+                    fetch(
+                        "http://localhost:5000/api/transactions",
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    ),
+                ]);
+
+                if (
+                    accountsResponse.status === 401 ||
+                    transactionsResponse.status === 401
+                ) {
+                    setErrorMessage(
+                        "Your session has expired. Please sign in again."
+                    );
+
+                    return;
+                }
+
+                if (!accountsResponse.ok) {
+                    throw new Error(
+                        "Unable to load accounts."
+                    );
+                }
+
+                if (!transactionsResponse.ok) {
+                    throw new Error(
+                        "Unable to load transactions."
+                    );
+                }
+
+                const accountsData: Account[] =
+                    await accountsResponse.json();
+
+                const transactionsData: Transaction[] =
+                    await transactionsResponse.json();
+
+                setAccounts(accountsData);
+                setTransactions(transactionsData);
+            } catch (error) {
+                console.error(
+                    "Dashboard error:",
+                    error
+                );
+
+                setErrorMessage(
+                    "Unable to load dashboard data."
+                );
+            } finally {
+                setIsLoadingAccounts(false);
+                setIsLoadingTransactions(false);
+            }
+        };
+
+        loadDashboard();
+    }, []);
+
+    const totalBalance = accounts.reduce(
         (total, account) =>
             total + account.balance,
         0
     );
 
-    const income = mockTransactions
+    const activeAccounts =
+        accounts.filter(
+            (account) => account.isActive
+        ).length;
+
+    const income = transactions
         .filter(
             (transaction) =>
-                transaction.amount > 0
+                transaction.type === "Deposit" ||
+                transaction.type === "Transfer In"
         )
         .reduce(
             (total, transaction) =>
@@ -74,22 +147,116 @@ function Dashboard() {
             0
         );
 
-    const expenses = mockTransactions
+    const expenses = transactions
         .filter(
             (transaction) =>
-                transaction.amount < 0
+                transaction.type === "Withdrawal" ||
+                transaction.type === "Transfer Out"
         )
         .reduce(
             (total, transaction) =>
-                total +
-                Math.abs(transaction.amount),
+                total + transaction.amount,
             0
         );
 
-    const activeAccounts =
-        mockAccounts.filter(
-            (account) => account.isActive
-        ).length;
+    const recentTransactions =
+        transactions.slice(0, 5);
+
+    const maskAccountNumber = (
+        accountNumber: string
+    ) => {
+        if (!accountNumber) {
+            return "****";
+        }
+
+        const lastFour =
+            accountNumber.slice(-4);
+
+        return `**** ${lastFour}`;
+    };
+
+    const isIncomingTransaction = (
+        transactionType: string
+    ) => {
+        return (
+            transactionType === "Deposit" ||
+            transactionType === "Transfer In"
+        );
+    };
+
+    const getTransactionIcon = (
+        transactionType: string
+    ) => {
+        switch (transactionType) {
+            case "Deposit":
+                return "↓";
+
+            case "Withdrawal":
+                return "↑";
+
+            case "Transfer In":
+                return "↙";
+
+            case "Transfer Out":
+                return "↗";
+
+            default:
+                return "•";
+        }
+    };
+
+    const getTransactionClass = (
+        transactionType: string
+    ) => {
+        switch (transactionType) {
+            case "Deposit":
+            case "Transfer In":
+                return "deposit";
+
+            case "Withdrawal":
+                return "withdrawal";
+
+            case "Transfer Out":
+                return "transfer";
+
+            default:
+                return "transfer";
+        }
+    };
+
+    const getTransactionDescription = (
+        transaction: Transaction
+    ) => {
+        switch (transaction.type) {
+            case "Deposit":
+                return "Deposit";
+
+            case "Withdrawal":
+                return "Withdrawal";
+
+            case "Transfer In":
+                return "Transfer received";
+
+            case "Transfer Out":
+                return "Transfer sent";
+
+            default:
+                return transaction.type;
+        }
+    };
+
+    const formatDate = (
+        date: string
+    ) => {
+        return new Date(date).toLocaleDateString(
+            "en-GB",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            }
+        );
+    };
 
     return (
         <div className="dashboard">
@@ -99,85 +266,118 @@ function Dashboard() {
                 <Header />
 
                 <div className="dashboard-content">
+                    {errorMessage && (
+                        <div className="dashboard-error">
+                            {errorMessage}
+                        </div>
+                    )}
+
+                    {/* Financial Overview */}
                     <section className="balance-overview">
-                        <div className="balance-card">
-                            <div className="balance-card-top">
-                                <div>
-                                    <span className="eyebrow">
-                                        TOTAL BALANCE
-                                    </span>
+                        <div className="balance-summary-card">
 
-                                    <h2>
-                                        €
-                                        {totalBalance.toFixed(
-                                            2
-                                        )}
-                                    </h2>
-                                </div>
+                            {/* Animated Background */}
+                            <div className="balance-wave">
+                                <span className="wave-line wave-line-one" />
+                                <span className="wave-line wave-line-two" />
 
-                                <div className="balance-status">
-                                    <span className="status-dot" />
-
-                                    All accounts active
-                                </div>
+                                <span className="wave-particle particle-one" />
+                                <span className="wave-particle particle-two" />
+                                <span className="wave-particle particle-three" />
+                                <span className="wave-particle particle-four" />
                             </div>
 
-                            <div className="balance-card-bottom">
-                                <span>
-                                    Available balance across your accounts
+                            {/* Main Balance */}
+                            <div className="balance-summary-main">
+                                <span className="eyebrow">
+                                    TOTAL BALANCE
                                 </span>
 
-                                <strong>
-                                    Bankly
-                                </strong>
+                                <h2>
+                                    {isLoadingAccounts
+                                        ? "..."
+                                        : `€${totalBalance.toFixed(
+                                              2
+                                          )}`}
+                                </h2>
+
+                                <span className="balance-description">
+                                    Available balance across
+                                    your accounts
+                                </span>
+
+                                <div className="balance-account-status">
+                                    <span className="status-dot" />
+
+                                    {isLoadingAccounts
+                                        ? "Loading accounts"
+                                        : `${activeAccounts} active ${
+                                              activeAccounts ===
+                                              1
+                                                  ? "account"
+                                                  : "accounts"
+                                          }`}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="overview-stat">
-                            <span>
-                                Income
-                            </span>
+                            {/* Statistics */}
+                            <div className="balance-summary-stats">
+                                <div className="balance-summary-stat">
+                                    <span>
+                                        Income
+                                    </span>
 
-                            <strong className="positive">
-                                +€
-                                {income.toFixed(2)}
-                            </strong>
+                                    <strong className="positive">
+                                        {isLoadingTransactions
+                                            ? "..."
+                                            : `+€${income.toFixed(
+                                                  2
+                                              )}`}
+                                    </strong>
 
-                            <small>
-                                This period
-                            </small>
-                        </div>
+                                    <small>
+                                        All recorded income
+                                    </small>
+                                </div>
 
-                        <div className="overview-stat">
-                            <span>
-                                Expenses
-                            </span>
+                                <div className="balance-summary-stat">
+                                    <span>
+                                        Expenses
+                                    </span>
 
-                            <strong className="negative">
-                                -€
-                                {expenses.toFixed(2)}
-                            </strong>
+                                    <strong className="negative">
+                                        {isLoadingTransactions
+                                            ? "..."
+                                            : `-€${expenses.toFixed(
+                                                  2
+                                              )}`}
+                                    </strong>
 
-                            <small>
-                                This period
-                            </small>
-                        </div>
+                                    <small>
+                                        All recorded expenses
+                                    </small>
+                                </div>
 
-                        <div className="overview-stat">
-                            <span>
-                                Accounts
-                            </span>
+                                <div className="balance-summary-stat">
+                                    <span>
+                                        Accounts
+                                    </span>
 
-                            <strong>
-                                {activeAccounts}
-                            </strong>
+                                    <strong>
+                                        {isLoadingAccounts
+                                            ? "..."
+                                            : activeAccounts}
+                                    </strong>
 
-                            <small>
-                                Active accounts
-                            </small>
+                                    <small>
+                                        Active accounts
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
+                    {/* Quick Actions */}
                     <section className="dashboard-section-block">
                         <div className="section-title">
                             <div>
@@ -192,9 +392,15 @@ function Dashboard() {
                         </div>
 
                         <div className="quick-actions-grid">
-                            <button className="quick-action">
-                                <span className="quick-action-icon">
-                                    +
+                            <button
+                                type="button"
+                                className="quick-action"
+                                onClick={() =>
+                                    navigate("/accounts")
+                                }
+                            >
+                                <span className="quick-action-icon deposit-action">
+                                    ↓
                                 </span>
 
                                 <span className="quick-action-content">
@@ -212,9 +418,15 @@ function Dashboard() {
                                 </span>
                             </button>
 
-                            <button className="quick-action">
-                                <span className="quick-action-icon">
-                                    ↓
+                            <button
+                                type="button"
+                                className="quick-action"
+                                onClick={() =>
+                                    navigate("/accounts")
+                                }
+                            >
+                                <span className="quick-action-icon withdraw-action">
+                                    ↑
                                 </span>
 
                                 <span className="quick-action-content">
@@ -223,7 +435,7 @@ function Dashboard() {
                                     </strong>
 
                                     <small>
-                                        Withdraw funds
+                                        Withdraw money from your account
                                     </small>
                                 </span>
 
@@ -232,9 +444,15 @@ function Dashboard() {
                                 </span>
                             </button>
 
-                            <button className="quick-action">
-                                <span className="quick-action-icon">
-                                    →
+                            <button
+                                type="button"
+                                className="quick-action"
+                                onClick={() =>
+                                    navigate("/transfer")
+                                }
+                            >
+                                <span className="quick-action-icon transfer-action">
+                                    ↗
                                 </span>
 
                                 <span className="quick-action-content">
@@ -243,7 +461,7 @@ function Dashboard() {
                                     </strong>
 
                                     <small>
-                                        Send money to an account
+                                        Send money to another account
                                     </small>
                                 </span>
 
@@ -254,7 +472,10 @@ function Dashboard() {
                         </div>
                     </section>
 
+                    {/* Dashboard Panels */}
                     <div className="dashboard-grid">
+
+                        {/* Recent Transactions */}
                         <section className="dashboard-panel">
                             <div className="panel-header">
                                 <div>
@@ -267,73 +488,101 @@ function Dashboard() {
                                     </h2>
                                 </div>
 
-                                <button className="panel-link">
+                                <button
+                                    type="button"
+                                    className="panel-link"
+                                    onClick={() =>
+                                        navigate(
+                                            "/transactions"
+                                        )
+                                    }
+                                >
                                     View all
                                 </button>
                             </div>
 
                             <div className="transactions-list">
-                                {mockTransactions.map(
-                                    (transaction) => (
-                                        <div
-                                            className="transaction-item"
-                                            key={
-                                                transaction.id
-                                            }
-                                        >
-                                            <div className="transaction-info">
+                                {isLoadingTransactions ? (
+                                    <div className="dashboard-loading">
+                                        Loading transactions...
+                                    </div>
+                                ) : recentTransactions.length ===
+                                  0 ? (
+                                    <div className="dashboard-loading">
+                                        No transactions yet.
+                                    </div>
+                                ) : (
+                                    recentTransactions.map(
+                                        (transaction) => {
+                                            const incoming =
+                                                isIncomingTransaction(
+                                                    transaction.type
+                                                );
+
+                                            return (
                                                 <div
-                                                    className={`transaction-icon ${transaction.type.toLowerCase()}`}
+                                                    className="transaction-item"
+                                                    key={
+                                                        transaction.id
+                                                    }
                                                 >
-                                                    {transaction.type ===
-                                                    "Deposit"
-                                                        ? "+"
-                                                        : transaction.type ===
-                                                            "Withdrawal"
-                                                          ? "-"
-                                                          : "→"}
-                                                </div>
+                                                    <div className="transaction-info">
+                                                        <div
+                                                            className={`transaction-icon ${getTransactionClass(
+                                                                transaction.type
+                                                            )}`}
+                                                        >
+                                                            {getTransactionIcon(
+                                                                transaction.type
+                                                            )}
+                                                        </div>
 
-                                                <div className="transaction-details">
-                                                    <strong>
-                                                        {
-                                                            transaction.description
+                                                        <div className="transaction-details">
+                                                            <strong>
+                                                                {getTransactionDescription(
+                                                                    transaction
+                                                                )}
+                                                            </strong>
+
+                                                            <span>
+                                                                Account #
+                                                                {
+                                                                    transaction.accountId
+                                                                }
+                                                                {" • "}
+                                                                {formatDate(
+                                                                    transaction.date
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <strong
+                                                        className={
+                                                            incoming
+                                                                ? "transaction-positive"
+                                                                : "transaction-negative"
                                                         }
+                                                    >
+                                                        {incoming
+                                                            ? "+"
+                                                            : "-"}
+                                                        €
+                                                        {Math.abs(
+                                                            transaction.amount
+                                                        ).toFixed(
+                                                            2
+                                                        )}
                                                     </strong>
-
-                                                    <span>
-                                                        {
-                                                            transaction.date
-                                                        }
-                                                    </span>
                                                 </div>
-                                            </div>
-
-                                            <strong
-                                                className={
-                                                    transaction.amount >=
-                                                    0
-                                                        ? "transaction-positive"
-                                                        : "transaction-negative"
-                                                }
-                                            >
-                                                {transaction.amount >=
-                                                0
-                                                    ? "+"
-                                                    : "-"}
-                                                €
-                                                {Math.abs(
-                                                    transaction.amount
-                                                ).toFixed(
-                                                    2
-                                                )}
-                                            </strong>
-                                        </div>
+                                            );
+                                        }
                                     )
                                 )}
                             </div>
                         </section>
 
+                        {/* Accounts */}
                         <section className="dashboard-panel">
                             <div className="panel-header">
                                 <div>
@@ -346,47 +595,72 @@ function Dashboard() {
                                     </h2>
                                 </div>
 
-                                <button className="panel-link">
+                                <button
+                                    type="button"
+                                    className="panel-link"
+                                    onClick={() =>
+                                        navigate("/accounts")
+                                    }
+                                >
                                     View all
                                 </button>
                             </div>
 
                             <div className="accounts-list">
-                                {mockAccounts.map(
-                                    (account) => (
-                                        <div
-                                            className="account-item"
-                                            key={account.id}
-                                        >
-                                            <div className="account-main">
-                                                <div className="account-icon">
+                                {isLoadingAccounts ? (
+                                    <div className="dashboard-loading">
+                                        Loading accounts...
+                                    </div>
+                                ) : accounts.length === 0 ? (
+                                    <div className="dashboard-loading">
+                                        You don't have any
+                                        accounts yet.
+                                    </div>
+                                ) : (
+                                    accounts.map(
+                                        (account) => (
+                                            <div
+                                                className="account-item"
+                                                key={
+                                                    account.id
+                                                }
+                                            >
+                                                <div className="account-main">
+                                                    <div className="account-icon">
+                                                        €
+                                                    </div>
+
+                                                    <div>
+                                                        <strong>
+                                                            {maskAccountNumber(
+                                                                account.accountNumber
+                                                            )}
+                                                        </strong>
+
+                                                        <span>
+                                                            <i
+                                                                className={
+                                                                    account.isActive
+                                                                        ? ""
+                                                                        : "inactive"
+                                                                }
+                                                            />
+
+                                                            {account.isActive
+                                                                ? "Active"
+                                                                : "Inactive"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <strong className="account-balance">
                                                     €
-                                                </div>
-
-                                                <div>
-                                                    <strong>
-                                                        {
-                                                            account.accountNumber
-                                                        }
-                                                    </strong>
-
-                                                    <span>
-                                                        <i />
-
-                                                        {account.isActive
-                                                            ? "Active"
-                                                            : "Inactive"}
-                                                    </span>
-                                                </div>
+                                                    {account.balance.toFixed(
+                                                        2
+                                                    )}
+                                                </strong>
                                             </div>
-
-                                            <strong className="account-balance">
-                                                €
-                                                {account.balance.toFixed(
-                                                    2
-                                                )}
-                                            </strong>
-                                        </div>
+                                        )
                                     )
                                 )}
                             </div>

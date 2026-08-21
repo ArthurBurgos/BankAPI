@@ -1,60 +1,264 @@
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import "./Transactions.css";
 
 interface Transaction {
     id: number;
-    type: "Deposit" | "Withdrawal" | "Transfer In" | "Transfer Out";
-    description: string;
-    account: string;
-    date: string;
     amount: number;
+    date: string;
+    type: string;
+    accountId: number;
 }
 
-const mockTransactions: Transaction[] = [
-    {
-        id: 1,
-        type: "Deposit",
-        description: "Salary",
-        account: "**** 4821",
-        date: "Aug 18, 2026",
-        amount: 1500,
-    },
-    {
-        id: 2,
-        type: "Withdrawal",
-        description: "Grocery Store",
-        account: "**** 4821",
-        date: "Aug 17, 2026",
-        amount: -85.50,
-    },
-    {
-        id: 3,
-        type: "Transfer Out",
-        description: "Transfer to savings",
-        account: "**** 4821",
-        date: "Aug 16, 2026",
-        amount: -250,
-    },
-    {
-        id: 4,
-        type: "Deposit",
-        description: "Freelance Payment",
-        account: "**** 7319",
-        date: "Aug 15, 2026",
-        amount: 600,
-    },
-    {
-        id: 5,
-        type: "Transfer In",
-        description: "Transfer received",
-        account: "**** 7319",
-        date: "Aug 14, 2026",
-        amount: 300,
-    },
-];
-
 function Transactions() {
+    const [transactions, setTransactions] =
+        useState<Transaction[]>([]);
+
+    const [isLoading, setIsLoading] =
+        useState(true);
+
+    const [errorMessage, setErrorMessage] =
+        useState("");
+
+    const [searchTerm, setSearchTerm] =
+        useState("");
+
+    const [typeFilter, setTypeFilter] =
+        useState("all");
+
+    useEffect(() => {
+        const fetchTransactions = async () => {
+            setIsLoading(true);
+            setErrorMessage("");
+
+            try {
+                const token =
+                    localStorage.getItem("token");
+
+                if (!token) {
+                    setErrorMessage(
+                        "Authentication token not found."
+                    );
+
+                    return;
+                }
+
+                const response = await fetch(
+                    "http://localhost:5000/api/transactions",
+                    {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (response.status === 401) {
+                    setErrorMessage(
+                        "Your session has expired. Please sign in again."
+                    );
+
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Unable to load transactions."
+                    );
+                }
+
+                const data: Transaction[] =
+                    await response.json();
+
+                setTransactions(data);
+            } catch (error) {
+                console.error(
+                    "Transactions error:",
+                    error
+                );
+
+                setErrorMessage(
+                    "Unable to load your transactions."
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchTransactions();
+    }, []);
+
+    const isIncomingTransaction = (
+        type: string
+    ) => {
+        return (
+            type === "Deposit" ||
+            type === "Transfer In"
+        );
+    };
+
+    const getTransactionDescription = (
+        type: string
+    ) => {
+        switch (type) {
+            case "Deposit":
+                return "Deposit";
+
+            case "Withdrawal":
+                return "Withdrawal";
+
+            case "Transfer In":
+                return "Transfer received";
+
+            case "Transfer Out":
+                return "Transfer sent";
+
+            default:
+                return type;
+        }
+    };
+
+    const getTransactionClass = (
+        type: string
+    ) => {
+        return type
+            .toLowerCase()
+            .replaceAll(" ", "-");
+    };
+
+    const getTransactionIcon = (
+        type: string
+    ) => {
+        switch (type) {
+            case "Deposit":
+                return "↓";
+
+            case "Withdrawal":
+                return "↑";
+
+            case "Transfer In":
+                return "↙";
+
+            case "Transfer Out":
+                return "↗";
+
+            default:
+                return "•";
+        }
+    };
+
+    const formatDate = (
+        date: string
+    ) => {
+        return new Date(date).toLocaleDateString(
+            "en-GB",
+            {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            }
+        );
+    };
+
+    const filteredTransactions =
+        useMemo(() => {
+            return transactions.filter(
+                (transaction) => {
+                    const description =
+                        getTransactionDescription(
+                            transaction.type
+                        ).toLowerCase();
+
+                    const type =
+                        transaction.type.toLowerCase();
+
+                    const search =
+                        searchTerm
+                            .trim()
+                            .toLowerCase();
+
+                    const matchesSearch =
+                        !search ||
+                        description.includes(search) ||
+                        type.includes(search) ||
+                        transaction.accountId
+                            .toString()
+                            .includes(search) ||
+                        transaction.id
+                            .toString()
+                            .includes(search);
+
+                    let matchesType = true;
+
+                    if (typeFilter === "deposit") {
+                        matchesType =
+                            transaction.type ===
+                            "Deposit";
+                    }
+
+                    if (typeFilter === "withdrawal") {
+                        matchesType =
+                            transaction.type ===
+                            "Withdrawal";
+                    }
+
+                    if (typeFilter === "transfer") {
+                        matchesType =
+                            transaction.type ===
+                                "Transfer In" ||
+                            transaction.type ===
+                                "Transfer Out";
+                    }
+
+                    return (
+                        matchesSearch &&
+                        matchesType
+                    );
+                }
+            );
+        }, [
+            transactions,
+            searchTerm,
+            typeFilter,
+        ]);
+
+    const totalIncoming =
+        transactions
+            .filter((transaction) =>
+                isIncomingTransaction(
+                    transaction.type
+                )
+            )
+            .reduce(
+                (total, transaction) =>
+                    total + transaction.amount,
+                0
+            );
+
+    const totalOutgoing =
+        transactions
+            .filter(
+                (transaction) =>
+                    !isIncomingTransaction(
+                        transaction.type
+                    )
+            )
+            .reduce(
+                (total, transaction) =>
+                    total + transaction.amount,
+                0
+            );
+
+    const totalTransfers =
+        transactions.filter(
+            (transaction) =>
+                transaction.type ===
+                    "Transfer In" ||
+                transaction.type ===
+                    "Transfer Out"
+        ).length;
+
     return (
         <div className="transactions-page">
             <Sidebar />
@@ -64,41 +268,177 @@ function Transactions() {
 
                 <div className="transactions-page-header">
                     <div>
-                        <h2>Transactions</h2>
+                        <span className="transactions-eyebrow">
+                            ACTIVITY
+                        </span>
+
+                        <h2>
+                            Transactions
+                        </h2>
 
                         <p>
-                            View and manage your recent
-                            transactions.
+                            Review your Bankly account
+                            activity and transaction history.
                         </p>
                     </div>
                 </div>
 
+                <section className="transactions-summary">
+                    <div>
+                        <span>
+                            Total Transactions
+                        </span>
+
+                        <strong>
+                            {isLoading
+                                ? "..."
+                                : transactions.length}
+                        </strong>
+
+                        <small>
+                            Recorded activity
+                        </small>
+                    </div>
+
+                    <div>
+                        <span>
+                            Money In
+                        </span>
+
+                        <strong className="summary-positive">
+                            {isLoading
+                                ? "..."
+                                : `+€${totalIncoming.toFixed(
+                                      2
+                                  )}`}
+                        </strong>
+
+                        <small>
+                            Deposits and incoming transfers
+                        </small>
+                    </div>
+
+                    <div>
+                        <span>
+                            Money Out
+                        </span>
+
+                        <strong className="summary-negative">
+                            {isLoading
+                                ? "..."
+                                : `-€${totalOutgoing.toFixed(
+                                      2
+                                  )}`}
+                        </strong>
+
+                        <small>
+                            Withdrawals and transfers
+                        </small>
+                    </div>
+
+                    <div>
+                        <span>
+                            Transfers
+                        </span>
+
+                        <strong className="summary-purple">
+                            {isLoading
+                                ? "..."
+                                : totalTransfers}
+                        </strong>
+
+                        <small>
+                            Transfer operations
+                        </small>
+                    </div>
+                </section>
+
+                {errorMessage && (
+                    <div className="transactions-message error">
+                        {errorMessage}
+                    </div>
+                )}
+
                 <section className="transactions-container">
                     <div className="transactions-toolbar">
                         <div className="transaction-search">
+                            <span className="search-icon">
+                                ⌕
+                            </span>
+
                             <input
                                 type="text"
-                                placeholder="Search transactions..."
+                                placeholder="Search by type, transaction ID or account..."
+                                value={searchTerm}
+                                onChange={(event) =>
+                                    setSearchTerm(
+                                        event.target.value
+                                    )
+                                }
                             />
+
+                            {searchTerm && (
+                                <button
+                                    type="button"
+                                    className="clear-search"
+                                    onClick={() =>
+                                        setSearchTerm("")
+                                    }
+                                >
+                                    ×
+                                </button>
+                            )}
                         </div>
 
-                        <select defaultValue="all">
-                            <option value="all">
-                                All transactions
-                            </option>
+                        <div className="transactions-filter">
+                            <span>
+                                Filter
+                            </span>
 
-                            <option value="deposit">
-                                Deposits
-                            </option>
+                            <select
+                                value={typeFilter}
+                                onChange={(event) =>
+                                    setTypeFilter(
+                                        event.target.value
+                                    )
+                                }
+                            >
+                                <option value="all">
+                                    All transactions
+                                </option>
 
-                            <option value="withdrawal">
-                                Withdrawals
-                            </option>
+                                <option value="deposit">
+                                    Deposits
+                                </option>
 
-                            <option value="transfer">
-                                Transfers
-                            </option>
-                        </select>
+                                <option value="withdrawal">
+                                    Withdrawals
+                                </option>
+
+                                <option value="transfer">
+                                    Transfers
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="transactions-table-heading">
+                        <div>
+                            <strong>
+                                Transaction History
+                            </strong>
+
+                            <span>
+                                {isLoading
+                                    ? "Loading..."
+                                    : `${filteredTransactions.length} ${
+                                          filteredTransactions.length ===
+                                          1
+                                              ? "result"
+                                              : "results"
+                                      }`}
+                            </span>
+                        </div>
                     </div>
 
                     <div className="transactions-table-wrapper">
@@ -121,95 +461,140 @@ function Transactions() {
                                         Type
                                     </th>
 
-                                    <th>
+                                    <th className="amount-column">
                                         Amount
                                     </th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                {mockTransactions.map(
-                                    (transaction) => (
-                                        <tr
-                                            key={
-                                                transaction.id
-                                            }
+                                {isLoading ? (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="transactions-state"
                                         >
-                                            <td>
-                                                <div className="transaction-table-info">
-                                                    <div
-                                                        className={`transaction-table-icon ${transaction.type
-                                                            .toLowerCase()
-                                                            .replace(
-                                                                " ",
-                                                                "-"
-                                                            )}`}
-                                                    >
-                                                        {transaction.amount >=
-                                                        0
-                                                            ? "+"
-                                                            : "-"}
-                                                    </div>
+                                            Loading transactions...
+                                        </td>
+                                    </tr>
+                                ) : filteredTransactions.length ===
+                                  0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="transactions-state"
+                                        >
+                                            <strong>
+                                                No transactions found
+                                            </strong>
 
-                                                    <div>
-                                                        <strong>
+                                            <span>
+                                                Try changing your search
+                                                or filter.
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredTransactions.map(
+                                        (
+                                            transaction
+                                        ) => {
+                                            const incoming =
+                                                isIncomingTransaction(
+                                                    transaction.type
+                                                );
+
+                                            const transactionClass =
+                                                getTransactionClass(
+                                                    transaction.type
+                                                );
+
+                                            return (
+                                                <tr
+                                                    key={
+                                                        transaction.id
+                                                    }
+                                                >
+                                                    <td>
+                                                        <div className="transaction-table-info">
+                                                            <div
+                                                                className={`transaction-table-icon ${transactionClass}`}
+                                                            >
+                                                                {getTransactionIcon(
+                                                                    transaction.type
+                                                                )}
+                                                            </div>
+
+                                                            <div>
+                                                                <strong>
+                                                                    {getTransactionDescription(
+                                                                        transaction.type
+                                                                    )}
+                                                                </strong>
+
+                                                                <span>
+                                                                    Transaction #
+                                                                    {
+                                                                        transaction.id
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <td>
+                                                        <div className="transaction-account">
+                                                            <span className="account-mini-icon">
+                                                                €
+                                                            </span>
+
+                                                            <span>
+                                                                Account #
+                                                                {
+                                                                    transaction.accountId
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </td>
+
+                                                    <td>
+                                                        <span className="transaction-date">
+                                                            {formatDate(
+                                                                transaction.date
+                                                            )}
+                                                        </span>
+                                                    </td>
+
+                                                    <td>
+                                                        <span
+                                                            className={`transaction-type ${transactionClass}`}
+                                                        >
                                                             {
-                                                                transaction.description
+                                                                transaction.type
                                                             }
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="amount-column">
+                                                        <strong
+                                                            className={
+                                                                incoming
+                                                                    ? "amount-positive"
+                                                                    : "amount-negative"
+                                                            }
+                                                        >
+                                                            {incoming
+                                                                ? "+"
+                                                                : "-"}
+                                                            €
+                                                            {transaction.amount.toFixed(
+                                                                2
+                                                            )}
                                                         </strong>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    transaction.account
-                                                }
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    transaction.date
-                                                }
-                                            </td>
-
-                                            <td>
-                                                <span
-                                                    className={`transaction-type ${transaction.type
-                                                        .toLowerCase()
-                                                        .replace(
-                                                            " ",
-                                                            "-"
-                                                        )}`}
-                                                >
-                                                    {
-                                                        transaction.type
-                                                    }
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <strong
-                                                    className={
-                                                        transaction.amount >=
-                                                        0
-                                                            ? "amount-positive"
-                                                            : "amount-negative"
-                                                    }
-                                                >
-                                                    {transaction.amount >=
-                                                    0
-                                                        ? "+"
-                                                        : "-"}
-                                                    €
-                                                    {Math.abs(
-                                                        transaction.amount
-                                                    ).toFixed(
-                                                        2
-                                                    )}
-                                                </strong>
-                                            </td>
-                                        </tr>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
                                     )
                                 )}
                             </tbody>
