@@ -61,6 +61,57 @@ function Accounts() {
     const [updatingAccountId, setUpdatingAccountId] =
         useState<number | null>(null);
 
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("en-IE", {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value);
+    };
+
+    const formatAmountInput = (
+        rawValue: string
+    ) => {
+        if (!rawValue) {
+            return "";
+        }
+
+        const cleanedValue =
+            rawValue.replace(/[^\d.]/g, "");
+
+        const parts =
+            cleanedValue.split(".");
+
+        const integerPart =
+            parts[0] || "0";
+
+        const decimalPart =
+            parts
+                .slice(1)
+                .join("")
+                .slice(0, 2);
+
+        const formattedInteger =
+            Number(integerPart).toLocaleString(
+                "en-IE"
+            );
+
+        if (cleanedValue.includes(".")) {
+            return `${formattedInteger}.${decimalPart}`;
+        }
+
+        return formattedInteger;
+    };
+
+    const parseAmountInput = (
+        value: string
+    ) => {
+        return Number(
+            value.replace(/,/g, "")
+        );
+    };
+
     const fetchAccounts = async () => {
         setIsLoading(true);
         setErrorMessage("");
@@ -256,7 +307,9 @@ function Accounts() {
         }
 
         const amount =
-            Number(operationAmount);
+            parseAmountInput(
+                operationAmount
+            );
 
         if (
             !Number.isFinite(amount) ||
@@ -337,11 +390,11 @@ function Accounts() {
 
             setSuccessMessage(
                 accountAction === "deposit"
-                    ? `Deposit of €${amount.toFixed(
-                          2
+                    ? `Deposit of ${formatCurrency(
+                          amount
                       )} completed successfully.`
-                    : `Withdrawal of €${amount.toFixed(
-                          2
+                    : `Withdrawal of ${formatCurrency(
+                          amount
                       )} completed successfully.`
             );
 
@@ -520,9 +573,9 @@ function Accounts() {
                         <strong>
                             {isLoading
                                 ? "..."
-                                : `€${totalBalance.toFixed(
-                                      2
-                                  )}`}
+                                : formatCurrency(
+                                      totalBalance
+                                  )}
                         </strong>
                     </div>
 
@@ -684,9 +737,8 @@ function Accounts() {
                                     </span>
 
                                     <strong>
-                                        €
-                                        {account.balance.toFixed(
-                                            2
+                                        {formatCurrency(
+                                            account.balance
                                         )}
                                     </strong>
 
@@ -710,7 +762,6 @@ function Accounts() {
                                         }
                                     >
                                         <span>↓</span>
-
                                         Deposit
                                     </button>
 
@@ -728,7 +779,6 @@ function Accounts() {
                                         }
                                     >
                                         <span>↑</span>
-
                                         Withdraw
                                     </button>
 
@@ -783,11 +833,9 @@ function Accounts() {
                                                     </strong>
 
                                                     <span>
-                                                        Current balance:
-                                                        {" "}
-                                                        €
-                                                        {account.balance.toFixed(
-                                                            2
+                                                        Current balance:{" "}
+                                                        {formatCurrency(
+                                                            account.balance
                                                         )}
                                                     </span>
                                                 </div>
@@ -801,9 +849,8 @@ function Accounts() {
 
                                                     <input
                                                         id={`operation-${account.id}`}
-                                                        type="number"
-                                                        min="0.01"
-                                                        step="0.01"
+                                                        type="text"
+                                                        inputMode="decimal"
                                                         value={
                                                             operationAmount
                                                         }
@@ -811,12 +858,15 @@ function Accounts() {
                                                             event
                                                         ) =>
                                                             setOperationAmount(
-                                                                event
-                                                                    .target
-                                                                    .value
+                                                                formatAmountInput(
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
                                                             )
                                                         }
                                                         placeholder="0.00"
+                                                        autoComplete="off"
                                                     />
                                                 </div>
 
@@ -879,10 +929,7 @@ function Accounts() {
                                                 </span>
 
                                                 <strong>
-                                                    #
-                                                    {
-                                                        account.id
-                                                    }
+                                                    #{account.id}
                                                 </strong>
                                             </div>
 
@@ -892,10 +939,7 @@ function Accounts() {
                                                 </span>
 
                                                 <strong>
-                                                    #
-                                                    {
-                                                        account.customerId
-                                                    }
+                                                    #{account.customerId}
                                                 </strong>
                                             </div>
 
@@ -917,9 +961,8 @@ function Accounts() {
                                                 </span>
 
                                                 <strong>
-                                                    €
-                                                    {account.balance.toFixed(
-                                                        2
+                                                    {formatCurrency(
+                                                        account.balance
                                                     )}
                                                 </strong>
                                             </div>

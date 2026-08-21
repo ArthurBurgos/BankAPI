@@ -1,5 +1,6 @@
 import {
     useEffect,
+    useRef,
     useState,
     type FormEvent,
 } from "react";
@@ -48,6 +49,63 @@ function Transfer() {
     const [errorMessage, setErrorMessage] =
         useState("");
 
+    const [isAccountDropdownOpen, setIsAccountDropdownOpen] =
+        useState(false);
+
+    const accountDropdownRef =
+        useRef<HTMLDivElement | null>(null);
+
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("en-IE", {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value);
+    };
+
+    const formatAmountInput = (
+        rawValue: string
+    ) => {
+        if (!rawValue) {
+            return "";
+        }
+
+        const cleanedValue =
+            rawValue.replace(/[^\d.]/g, "");
+
+        const parts =
+            cleanedValue.split(".");
+
+        const integerPart =
+            parts[0] || "0";
+
+        const decimalPart =
+            parts
+                .slice(1)
+                .join("")
+                .slice(0, 2);
+
+        const formattedInteger =
+            Number(integerPart).toLocaleString(
+                "en-IE"
+            );
+
+        if (cleanedValue.includes(".")) {
+            return `${formattedInteger}.${decimalPart}`;
+        }
+
+        return formattedInteger;
+    };
+
+    const parseAmountInput = (
+        value: string
+    ) => {
+        return Number(
+            value.replace(/,/g, "")
+        );
+    };
+
     useEffect(() => {
         const fetchAccounts = async () => {
             setIsLoadingAccounts(true);
@@ -69,7 +127,8 @@ function Transfer() {
                     {
                         method: "GET",
                         headers: {
-                            Authorization: `Bearer ${token}`,
+                            Authorization:
+                                `Bearer ${token}`,
                         },
                     }
                 );
@@ -108,6 +167,33 @@ function Transfer() {
         fetchAccounts();
     }, []);
 
+    useEffect(() => {
+        const handleOutsideClick = (
+            event: MouseEvent
+        ) => {
+            if (
+                accountDropdownRef.current &&
+                !accountDropdownRef.current.contains(
+                    event.target as Node
+                )
+            ) {
+                setIsAccountDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener(
+            "mousedown",
+            handleOutsideClick
+        );
+
+        return () => {
+            document.removeEventListener(
+                "mousedown",
+                handleOutsideClick
+            );
+        };
+    }, []);
+
     const selectedSourceAccount =
         accounts.find(
             (account) =>
@@ -119,6 +205,47 @@ function Transfer() {
         accounts.filter(
             (account) => account.isActive
         );
+
+    const transferAmount =
+        parseAmountInput(amount);
+
+    const validTransferAmount =
+        Number.isFinite(transferAmount) &&
+        transferAmount > 0
+            ? transferAmount
+            : 0;
+
+    const remainingBalance =
+        selectedSourceAccount
+            ? Math.max(
+                  selectedSourceAccount.balance -
+                      validTransferAmount,
+                  0
+              )
+            : 0;
+
+    const maskAccountNumber = (
+        accountNumber: string
+    ) => {
+        if (!accountNumber) {
+            return "****";
+        }
+
+        return `**** ${accountNumber.slice(-4)}`;
+    };
+
+    const selectAccount = (
+        account: Account
+    ) => {
+        setSourceAccount(
+            account.id.toString()
+        );
+
+        setIsAccountDropdownOpen(false);
+
+        setSuccessMessage("");
+        setErrorMessage("");
+    };
 
     const handleSubmit = async (
         event: FormEvent<HTMLFormElement>
@@ -147,9 +274,6 @@ function Transfer() {
 
         const destinationAccountId =
             Number(destinationAccount);
-
-        const transferAmount =
-            Number(amount);
 
         if (
             !Number.isInteger(sourceAccountId) ||
@@ -260,17 +384,33 @@ function Transfer() {
             );
 
             setAccounts((currentAccounts) =>
-                currentAccounts.map((account) =>
-                    account.id ===
-                    sourceAccountId
-                        ? {
-                              ...account,
-                              balance:
-                                  account.balance -
-                                  transferAmount,
-                          }
-                        : account
-                )
+                currentAccounts.map((account) => {
+                    if (
+                        account.id ===
+                        sourceAccountId
+                    ) {
+                        return {
+                            ...account,
+                            balance:
+                                account.balance -
+                                transferAmount,
+                        };
+                    }
+
+                    if (
+                        account.id ===
+                        destinationAccountId
+                    ) {
+                        return {
+                            ...account,
+                            balance:
+                                account.balance +
+                                transferAmount,
+                        };
+                    }
+
+                    return account;
+                })
             );
 
             setDestinationAccount("");
@@ -288,30 +428,6 @@ function Transfer() {
             setIsSubmitting(false);
         }
     };
-
-    const maskAccountNumber = (
-        accountNumber: string
-    ) => {
-        if (!accountNumber) {
-            return "****";
-        }
-
-        return `**** ${accountNumber.slice(-4)}`;
-    };
-
-    const transferAmount =
-        Number(amount);
-
-    const remainingBalance =
-        selectedSourceAccount &&
-        Number.isFinite(transferAmount) &&
-        transferAmount > 0
-            ? Math.max(
-                  selectedSourceAccount.balance -
-                      transferAmount,
-                  0
-              )
-            : selectedSourceAccount?.balance ?? 0;
 
     return (
         <div className="transfer-page">
@@ -359,10 +475,10 @@ function Transfer() {
 
                         <strong className="overview-green">
                             {selectedSourceAccount
-                                ? `€${selectedSourceAccount.balance.toFixed(
-                                      2
-                                  )}`
-                                : "€0.00"}
+                                ? formatCurrency(
+                                      selectedSourceAccount.balance
+                                  )
+                                : formatCurrency(0)}
                         </strong>
 
                         <small>
@@ -376,14 +492,9 @@ function Transfer() {
                         </span>
 
                         <strong className="overview-purple">
-                            {amount &&
-                            Number.isFinite(
-                                Number(amount)
-                            )
-                                ? `€${Number(
-                                      amount
-                                  ).toFixed(2)}`
-                                : "€0.00"}
+                            {formatCurrency(
+                                validTransferAmount
+                            )}
                         </strong>
 
                         <small>
@@ -397,9 +508,8 @@ function Transfer() {
                         </span>
 
                         <strong>
-                            €
-                            {remainingBalance.toFixed(
-                                2
+                            {formatCurrency(
+                                remainingBalance
                             )}
                         </strong>
 
@@ -441,66 +551,175 @@ function Transfer() {
                                 </h3>
 
                                 <p>
-                                    Select the source
-                                    account, recipient and
-                                    amount.
+                                    Select the source account,
+                                    recipient and amount.
                                 </p>
                             </div>
                         </div>
 
                         <div className="transfer-field">
-                            <label htmlFor="source-account">
+                            <label>
                                 From Account
                             </label>
 
-                            <div className="transfer-select-wrapper">
-                                <span className="field-icon">
-                                    €
-                                </span>
-
-                                <select
-                                    id="source-account"
-                                    value={
-                                        sourceAccount
-                                    }
-                                    onChange={(event) =>
-                                        setSourceAccount(
-                                            event.target
-                                                .value
+                            <div
+                                className="account-dropdown"
+                                ref={
+                                    accountDropdownRef
+                                }
+                            >
+                                <button
+                                    type="button"
+                                    className={`account-dropdown-trigger ${
+                                        isAccountDropdownOpen
+                                            ? "open"
+                                            : ""
+                                    }`}
+                                    onClick={() =>
+                                        setIsAccountDropdownOpen(
+                                            (
+                                                currentValue
+                                            ) =>
+                                                !currentValue
                                         )
                                     }
-                                    required
                                     disabled={
                                         isLoadingAccounts
                                     }
+                                    aria-expanded={
+                                        isAccountDropdownOpen
+                                    }
                                 >
-                                    <option value="">
-                                        {isLoadingAccounts
-                                            ? "Loading accounts..."
-                                            : "Select source account"}
-                                    </option>
+                                    <span className="dropdown-trigger-icon">
+                                        €
+                                    </span>
 
-                                    {activeAccounts.map(
-                                        (account) => (
-                                            <option
-                                                key={
-                                                    account.id
-                                                }
-                                                value={
-                                                    account.id
-                                                }
-                                            >
-                                                {maskAccountNumber(
-                                                    account.accountNumber
-                                                )}{" "}
-                                                — €
-                                                {account.balance.toFixed(
-                                                    2
-                                                )}
-                                            </option>
-                                        )
-                                    )}
-                                </select>
+                                    <span className="dropdown-trigger-content">
+                                        {isLoadingAccounts ? (
+                                            <strong>
+                                                Loading accounts...
+                                            </strong>
+                                        ) : selectedSourceAccount ? (
+                                            <>
+                                                <strong>
+                                                    {maskAccountNumber(
+                                                        selectedSourceAccount.accountNumber
+                                                    )}
+                                                </strong>
+
+                                                <small>
+                                                    {formatCurrency(
+                                                        selectedSourceAccount.balance
+                                                    )}{" "}
+                                                    available
+                                                </small>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <strong>
+                                                    Select source account
+                                                </strong>
+
+                                                <small>
+                                                    Choose an active Bankly account
+                                                </small>
+                                            </>
+                                        )}
+                                    </span>
+
+                                    <span
+                                        className={`dropdown-chevron ${
+                                            isAccountDropdownOpen
+                                                ? "open"
+                                                : ""
+                                        }`}
+                                    >
+                                        ↓
+                                    </span>
+                                </button>
+
+                                {isAccountDropdownOpen && (
+                                    <div className="account-dropdown-menu">
+                                        <div className="dropdown-menu-heading">
+                                            <span>
+                                                YOUR ACCOUNTS
+                                            </span>
+
+                                            <small>
+                                                {
+                                                    activeAccounts.length
+                                                }{" "}
+                                                active
+                                            </small>
+                                        </div>
+
+                                        {activeAccounts.length ===
+                                        0 ? (
+                                            <div className="dropdown-empty">
+                                                No active accounts available.
+                                            </div>
+                                        ) : (
+                                            activeAccounts.map(
+                                                (
+                                                    account
+                                                ) => (
+                                                    <button
+                                                        key={
+                                                            account.id
+                                                        }
+                                                        type="button"
+                                                        className={`account-dropdown-option ${
+                                                            sourceAccount ===
+                                                            account.id.toString()
+                                                                ? "selected"
+                                                                : ""
+                                                        }`}
+                                                        onClick={() =>
+                                                            selectAccount(
+                                                                account
+                                                            )
+                                                        }
+                                                    >
+                                                        <span className="dropdown-option-icon">
+                                                            €
+                                                        </span>
+
+                                                        <span className="dropdown-option-info">
+                                                            <strong>
+                                                                Bankly Account
+                                                            </strong>
+
+                                                            <small>
+                                                                {maskAccountNumber(
+                                                                    account.accountNumber
+                                                                )}
+                                                            </small>
+                                                        </span>
+
+                                                        <span className="dropdown-option-balance">
+                                                            <strong>
+                                                                {formatCurrency(
+                                                                    account.balance
+                                                                )}
+                                                            </strong>
+
+                                                            <small>
+                                                                Available
+                                                            </small>
+                                                        </span>
+
+                                                        {sourceAccount ===
+                                                            account.id.toString() && (
+                                                            <span className="dropdown-selected-mark">
+                                                                ✓
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                )
+                                            )
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -530,9 +749,8 @@ function Transfer() {
                                     </span>
 
                                     <strong>
-                                        €
-                                        {selectedSourceAccount.balance.toFixed(
-                                            2
+                                        {formatCurrency(
+                                            selectedSourceAccount.balance
                                         )}
                                     </strong>
                                 </div>
@@ -551,20 +769,22 @@ function Transfer() {
 
                                 <input
                                     id="destination-account"
-                                    type="number"
-                                    min="1"
-                                    step="1"
+                                    type="text"
+                                    inputMode="numeric"
                                     value={
                                         destinationAccount
                                     }
                                     onChange={(event) =>
                                         setDestinationAccount(
-                                            event.target
-                                                .value
+                                            event.target.value.replace(
+                                                /\D/g,
+                                                ""
+                                            )
                                         )
                                     }
                                     placeholder="Enter recipient account ID"
                                     required
+                                    autoComplete="off"
                                 />
                             </div>
 
@@ -586,20 +806,35 @@ function Transfer() {
 
                                 <input
                                     id="amount"
-                                    type="number"
-                                    min="0.01"
-                                    step="0.01"
+                                    type="text"
+                                    inputMode="decimal"
                                     value={amount}
                                     onChange={(event) =>
                                         setAmount(
-                                            event.target
-                                                .value
+                                            formatAmountInput(
+                                                event
+                                                    .target
+                                                    .value
+                                            )
                                         )
                                     }
                                     placeholder="0.00"
                                     required
+                                    autoComplete="off"
                                 />
                             </div>
+
+                            {validTransferAmount >
+                                0 && (
+                                <span className="form-hint amount-preview">
+                                    Transfer value:{" "}
+                                    <strong>
+                                        {formatCurrency(
+                                            validTransferAmount
+                                        )}
+                                    </strong>
+                                </span>
+                            )}
                         </div>
 
                         <div className="transfer-security-note">
@@ -657,14 +892,14 @@ function Transfer() {
                         </div>
 
                         <div className="summary-route">
-                            <div className="route-point">
-                                <span className="route-icon source">
+                            <div className="route-step">
+                                <div className="route-marker source">
                                     €
-                                </span>
+                                </div>
 
-                                <div>
+                                <div className="route-content">
                                     <span>
-                                        From
+                                        FROM
                                     </span>
 
                                     <strong>
@@ -674,23 +909,30 @@ function Transfer() {
                                               )
                                             : "Select account"}
                                     </strong>
+
+                                    {selectedSourceAccount && (
+                                        <small>
+                                            {formatCurrency(
+                                                selectedSourceAccount.balance
+                                            )}{" "}
+                                            available
+                                        </small>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="route-line">
-                                <span>
-                                    ↓
-                                </span>
+                            <div className="route-connector">
+                                <span />
                             </div>
 
-                            <div className="route-point">
-                                <span className="route-icon destination">
+                            <div className="route-step">
+                                <div className="route-marker destination">
                                     ↗
-                                </span>
+                                </div>
 
-                                <div>
+                                <div className="route-content">
                                     <span>
-                                        To
+                                        TO
                                     </span>
 
                                     <strong>
@@ -698,6 +940,10 @@ function Transfer() {
                                             ? `Account #${destinationAccount}`
                                             : "Enter recipient"}
                                     </strong>
+
+                                    <small>
+                                        Bankly recipient
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -710,14 +956,9 @@ function Transfer() {
                             </span>
 
                             <strong className="summary-amount">
-                                {amount &&
-                                Number.isFinite(
-                                    Number(amount)
-                                )
-                                    ? `€${Number(
-                                          amount
-                                      ).toFixed(2)}`
-                                    : "€0.00"}
+                                {formatCurrency(
+                                    validTransferAmount
+                                )}
                             </strong>
                         </div>
 
@@ -728,10 +969,10 @@ function Transfer() {
 
                             <strong>
                                 {selectedSourceAccount
-                                    ? `€${selectedSourceAccount.balance.toFixed(
-                                          2
-                                      )}`
-                                    : "€0.00"}
+                                    ? formatCurrency(
+                                          selectedSourceAccount.balance
+                                      )
+                                    : formatCurrency(0)}
                             </strong>
                         </div>
 
@@ -741,9 +982,8 @@ function Transfer() {
                             </span>
 
                             <strong>
-                                €
-                                {remainingBalance.toFixed(
-                                    2
+                                {formatCurrency(
+                                    remainingBalance
                                 )}
                             </strong>
                         </div>
@@ -756,14 +996,9 @@ function Transfer() {
                             </span>
 
                             <strong>
-                                {amount &&
-                                Number.isFinite(
-                                    Number(amount)
-                                )
-                                    ? `€${Number(
-                                          amount
-                                      ).toFixed(2)}`
-                                    : "€0.00"}
+                                {formatCurrency(
+                                    validTransferAmount
+                                )}
                             </strong>
                         </div>
 

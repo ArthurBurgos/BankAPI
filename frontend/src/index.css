@@ -5,75 +5,151 @@
         sans-serif;
 
     color: #111827;
+
     background: #f5f7f9;
 
     font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+
+    text-rendering:
+        optimizeLegibility;
+
+    -webkit-font-smoothing:
+        antialiased;
+
+    -moz-osx-font-smoothing:
+        grayscale;
 }
+
+/* ========================================
+   Light Theme
+======================================== */
 
 :root[data-theme="light"] {
     --background: #f5f7f9;
+
     --surface: #ffffff;
-    --surface-secondary: #f8fafc;
+
+    --surface-secondary:
+        #f8fafc;
 
     --border: #d9e0e5;
 
     --text-primary: #111827;
+
     --text-secondary: #64748b;
+
     --text-muted: #94a3b8;
 
     --primary: #10b981;
+
     --primary-hover: #059669;
 
-    --sidebar-background: #111827;
-    --sidebar-surface: #1f2937;
-    --sidebar-text: #9ca3af;
-    --sidebar-text-active: #ffffff;
+    --sidebar-background:
+        #111827;
 
-    --success-background: #ecfdf5;
-    --success-text: #059669;
+    --sidebar-surface:
+        #1f2937;
 
-    --danger-background: #fef2f2;
-    --danger-text: #dc2626;
+    --sidebar-text:
+        #9ca3af;
 
-    --info-background: #eff6ff;
-    --info-text: #2563eb;
+    --sidebar-text-active:
+        #ffffff;
 
-    --shadow: rgba(0, 0, 0, 0.04);
+    --success-background:
+        #ecfdf5;
+
+    --success-text:
+        #059669;
+
+    --danger-background:
+        #fef2f2;
+
+    --danger-text:
+        #dc2626;
+
+    --info-background:
+        #eff6ff;
+
+    --info-text:
+        #2563eb;
+
+    --shadow:
+        rgba(
+            0,
+            0,
+            0,
+            0.04
+        );
 }
+
+/* ========================================
+   Dark Theme
+======================================== */
 
 :root[data-theme="dark"] {
     --background: #181b1f;
+
     --surface: #24292f;
-    --surface-secondary: #20252a;
+
+    --surface-secondary:
+        #20252a;
 
     --border: #3b434c;
 
     --text-primary: #f5f7fa;
+
     --text-secondary: #aab4c0;
+
     --text-muted: #7f8b98;
 
     --primary: #39d98a;
-    --primary-hover: #2fc77c;
 
-    --sidebar-background: #111416;
-    --sidebar-surface: #20251f;
-    --sidebar-text: #8f9b96;
-    --sidebar-text-active: #ffffff;
+    --primary-hover:
+        #2fc77c;
 
-    --success-background: #17352a;
-    --success-text: #39d98a;
+    --sidebar-background:
+        #111416;
 
-    --danger-background: #3a2225;
-    --danger-text: #f87171;
+    --sidebar-surface:
+        #20251f;
 
-    --info-background: #202f2a;
-    --info-text: #39d98a;
+    --sidebar-text:
+        #8f9b96;
 
-    --shadow: rgba(0, 0, 0, 0.20);
+    --sidebar-text-active:
+        #ffffff;
+
+    --success-background:
+        #17352a;
+
+    --success-text:
+        #39d98a;
+
+    --danger-background:
+        #3a2225;
+
+    --danger-text:
+        #f87171;
+
+    --info-background:
+        #202f2a;
+
+    --info-text:
+        #39d98a;
+
+    --shadow:
+        rgba(
+            0,
+            0,
+            0,
+            0.20
+        );
 }
+
+/* ========================================
+   Global Reset
+======================================== */
 
 * {
     box-sizing: border-box;
@@ -82,23 +158,201 @@
 html,
 body,
 #root {
+    width: 100%;
+
+    height: 100%;
+
     min-height: 100%;
+
     margin: 0;
+
+    overflow: hidden;
+}
+
+html {
+    background:
+        var(--background);
 }
 
 body {
     min-width: 320px;
-    background: var(--background);
-    color: var(--text-primary);
+
+    background:
+        var(--background);
+
+    color:
+        var(--text-primary);
+
+    overflow: hidden;
 
     transition:
         background-color 0.3s ease,
         color 0.3s ease;
 }
 
+#root {
+    overflow: hidden;
+}
+
+/* ========================================
+   Form Elements
+======================================== */
+
 button,
 input,
 textarea,
 select {
     font: inherit;
+}
+
+/* ========================================
+   Bankly Page Layout
+======================================== */
+
+/*
+    The browser/body no longer scrolls.
+    Only the main content of each Bankly
+    page can scroll.
+*/
+
+.dashboard,
+.accounts-page,
+.transactions-page,
+.transfer-page,
+.settings-page {
+    width: 100%;
+
+    height: 100vh;
+    height: 100dvh;
+
+    min-height: 0;
+
+    overflow: hidden;
+}
+
+/* ========================================
+   Scrollable Content Area
+======================================== */
+
+.dashboard-main,
+.accounts-main,
+.transactions-main,
+.transfer-main,
+.settings-main {
+    height: 100vh;
+    height: 100dvh;
+
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    overscroll-behavior:
+        contain;
+
+    scroll-behavior:
+        smooth;
+
+    scrollbar-gutter:
+        stable;
+}
+
+/* ========================================
+   Firefox Scrollbar
+======================================== */
+
+.dashboard-main,
+.accounts-main,
+.transactions-main,
+.transfer-main,
+.settings-main {
+    scrollbar-width:
+        thin;
+
+    scrollbar-color:
+        #475159
+        transparent;
+}
+
+/* ========================================
+   Chrome / Edge / Safari Scrollbar
+======================================== */
+
+.dashboard-main::-webkit-scrollbar,
+.accounts-main::-webkit-scrollbar,
+.transactions-main::-webkit-scrollbar,
+.transfer-main::-webkit-scrollbar,
+.settings-main::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dashboard-main::-webkit-scrollbar-track,
+.accounts-main::-webkit-scrollbar-track,
+.transactions-main::-webkit-scrollbar-track,
+.transfer-main::-webkit-scrollbar-track,
+.settings-main::-webkit-scrollbar-track {
+    background:
+        transparent;
+}
+
+.dashboard-main::-webkit-scrollbar-thumb,
+.accounts-main::-webkit-scrollbar-thumb,
+.transactions-main::-webkit-scrollbar-thumb,
+.transfer-main::-webkit-scrollbar-thumb,
+.settings-main::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+
+    border-radius: 999px;
+
+    background:
+        #475159;
+
+    background-clip:
+        padding-box;
+
+    transition:
+        background-color
+        0.2s ease;
+}
+
+.dashboard-main::-webkit-scrollbar-thumb:hover,
+.accounts-main::-webkit-scrollbar-thumb:hover,
+.transactions-main::-webkit-scrollbar-thumb:hover,
+.transfer-main::-webkit-scrollbar-thumb:hover,
+.settings-main::-webkit-scrollbar-thumb:hover {
+    background:
+        #39d98a;
+
+    background-clip:
+        padding-box;
+}
+
+/* ========================================
+   Scrollbar Corner
+======================================== */
+
+.dashboard-main::-webkit-scrollbar-corner,
+.accounts-main::-webkit-scrollbar-corner,
+.transactions-main::-webkit-scrollbar-corner,
+.transfer-main::-webkit-scrollbar-corner,
+.settings-main::-webkit-scrollbar-corner {
+    background:
+        transparent;
+}
+
+/* ========================================
+   Selection
+======================================== */
+
+::selection {
+    background:
+        rgba(
+            57,
+            217,
+            138,
+            0.22
+        );
+
+    color:
+        #ffffff;
 }

@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
+
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import "./Transactions.css";
@@ -27,6 +32,15 @@ function Transactions() {
     const [typeFilter, setTypeFilter] =
         useState("all");
 
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("en-IE", {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value);
+    };
+
     useEffect(() => {
         const fetchTransactions = async () => {
             setIsLoading(true);
@@ -49,7 +63,8 @@ function Transactions() {
                     {
                         method: "GET",
                         headers: {
-                            Authorization: `Bearer ${token}`,
+                            Authorization:
+                                `Bearer ${token}`,
                         },
                     }
                 );
@@ -197,7 +212,9 @@ function Transactions() {
                             "Deposit";
                     }
 
-                    if (typeFilter === "withdrawal") {
+                    if (
+                        typeFilter === "withdrawal"
+                    ) {
                         matchesType =
                             transaction.type ===
                             "Withdrawal";
@@ -232,7 +249,10 @@ function Transactions() {
             )
             .reduce(
                 (total, transaction) =>
-                    total + transaction.amount,
+                    total +
+                    Math.abs(
+                        transaction.amount
+                    ),
                 0
             );
 
@@ -246,7 +266,10 @@ function Transactions() {
             )
             .reduce(
                 (total, transaction) =>
-                    total + transaction.amount,
+                    total +
+                    Math.abs(
+                        transaction.amount
+                    ),
                 0
             );
 
@@ -308,9 +331,11 @@ function Transactions() {
                         <strong className="summary-positive">
                             {isLoading
                                 ? "..."
-                                : `+€${totalIncoming.toFixed(
-                                      2
-                                  )}`}
+                                : totalIncoming > 0
+                                  ? `+${formatCurrency(
+                                        totalIncoming
+                                    )}`
+                                  : formatCurrency(0)}
                         </strong>
 
                         <small>
@@ -326,9 +351,11 @@ function Transactions() {
                         <strong className="summary-negative">
                             {isLoading
                                 ? "..."
-                                : `-€${totalOutgoing.toFixed(
-                                      2
-                                  )}`}
+                                : totalOutgoing > 0
+                                  ? `-${formatCurrency(
+                                        totalOutgoing
+                                    )}`
+                                  : formatCurrency(0)}
                         </strong>
 
                         <small>
@@ -586,9 +613,10 @@ function Transactions() {
                                                             {incoming
                                                                 ? "+"
                                                                 : "-"}
-                                                            €
-                                                            {transaction.amount.toFixed(
-                                                                2
+                                                            {formatCurrency(
+                                                                Math.abs(
+                                                                    transaction.amount
+                                                                )
                                                             )}
                                                         </strong>
                                                     </td>

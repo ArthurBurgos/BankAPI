@@ -23,8 +23,11 @@ interface Transaction {
 function Dashboard() {
     const navigate = useNavigate();
 
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [accounts, setAccounts] =
+        useState<Account[]>([]);
+
+    const [transactions, setTransactions] =
+        useState<Transaction[]>([]);
 
     const [isLoadingAccounts, setIsLoadingAccounts] =
         useState(true);
@@ -34,6 +37,9 @@ function Dashboard() {
 
     const [errorMessage, setErrorMessage] =
         useState("");
+
+    const username =
+        localStorage.getItem("username") || "User";
 
     useEffect(() => {
         const loadDashboard = async () => {
@@ -60,7 +66,8 @@ function Dashboard() {
                         "http://localhost:5000/api/accounts",
                         {
                             headers: {
-                                Authorization: `Bearer ${token}`,
+                                Authorization:
+                                    `Bearer ${token}`,
                             },
                         }
                     ),
@@ -69,7 +76,8 @@ function Dashboard() {
                         "http://localhost:5000/api/transactions",
                         {
                             headers: {
-                                Authorization: `Bearer ${token}`,
+                                Authorization:
+                                    `Bearer ${token}`,
                             },
                         }
                     ),
@@ -161,6 +169,17 @@ function Dashboard() {
 
     const recentTransactions =
         transactions.slice(0, 5);
+
+    const formatCurrency = (
+        value: number
+    ) => {
+        return new Intl.NumberFormat("en-IE", {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value);
+    };
 
     const maskAccountNumber = (
         accountNumber: string
@@ -265,6 +284,20 @@ function Dashboard() {
             <main className="dashboard-main">
                 <Header />
 
+                <div className="dashboard-page-header">
+                    <span className="dashboard-page-eyebrow">
+                        OVERVIEW
+                    </span>
+
+                    <h1>
+                        Dashboard
+                    </h1>
+
+                    <p>
+                        Welcome back, {username}.
+                    </p>
+                </div>
+
                 <div className="dashboard-content">
                     {errorMessage && (
                         <div className="dashboard-error">
@@ -296,9 +329,9 @@ function Dashboard() {
                                 <h2>
                                     {isLoadingAccounts
                                         ? "..."
-                                        : `€${totalBalance.toFixed(
-                                              2
-                                          )}`}
+                                        : formatCurrency(
+                                              totalBalance
+                                          )}
                                 </h2>
 
                                 <span className="balance-description">
@@ -330,9 +363,13 @@ function Dashboard() {
                                     <strong className="positive">
                                         {isLoadingTransactions
                                             ? "..."
-                                            : `+€${income.toFixed(
-                                                  2
-                                              )}`}
+                                            : income > 0
+                                              ? `+${formatCurrency(
+                                                    income
+                                                )}`
+                                              : formatCurrency(
+                                                    0
+                                                )}
                                     </strong>
 
                                     <small>
@@ -348,9 +385,13 @@ function Dashboard() {
                                     <strong className="negative">
                                         {isLoadingTransactions
                                             ? "..."
-                                            : `-€${expenses.toFixed(
-                                                  2
-                                              )}`}
+                                            : expenses > 0
+                                              ? `-${formatCurrency(
+                                                    expenses
+                                                )}`
+                                              : formatCurrency(
+                                                    0
+                                                )}
                                     </strong>
 
                                     <small>
@@ -567,11 +608,10 @@ function Dashboard() {
                                                         {incoming
                                                             ? "+"
                                                             : "-"}
-                                                        €
-                                                        {Math.abs(
-                                                            transaction.amount
-                                                        ).toFixed(
-                                                            2
+                                                        {formatCurrency(
+                                                            Math.abs(
+                                                                transaction.amount
+                                                            )
                                                         )}
                                                     </strong>
                                                 </div>
@@ -654,9 +694,8 @@ function Dashboard() {
                                                 </div>
 
                                                 <strong className="account-balance">
-                                                    €
-                                                    {account.balance.toFixed(
-                                                        2
+                                                    {formatCurrency(
+                                                        account.balance
                                                     )}
                                                 </strong>
                                             </div>

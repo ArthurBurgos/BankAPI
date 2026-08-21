@@ -9,19 +9,7 @@ function Header() {
 
     return (
         <header className="dashboard-header">
-            <div className="dashboard-header-title">
-                <span className="header-eyebrow">
-                    OVERVIEW
-                </span>
-
-                <h1>
-                    Dashboard
-                </h1>
-
-                <p>
-                    Welcome back, {username}.
-                </p>
-            </div>
+            <div className="header-spacer" />
 
             <div className="user-profile">
                 <div className="user-avatar">
